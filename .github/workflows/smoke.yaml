@@ -94,10 +94,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - task: localization
+          - run_key: localization-ndt
             benchmark: benchmarks/localization/lidar_localization_replay_001
             experiment: experiments/localization/ndt_baseline
-          - task: perception
+          - run_key: localization-icp
+            benchmark: benchmarks/localization/lidar_localization_replay_001
+            experiment: experiments/localization/icp_registration_toy
+          - run_key: perception-cluster
             benchmark: benchmarks/perception/static_obstacle_lidar_001
             experiment: experiments/perception/lidar_cluster_baseline
     runs-on: ubuntu-24.04
@@ -120,7 +123,7 @@ jobs:
           mkdir -p /tmp/apg_data/rosbags
           python3 tools/scripts/make_sample_rosbag.py \
             /tmp/apg_data/rosbags/sample_lidar_localization_bag
-      - name: Run real rosbag_replay benchmark (${{ matrix.task }})
+      - name: Run real rosbag_replay benchmark (${{ matrix.run_key }})
         shell: bash
         env:
           APG_DATA: /tmp/apg_data
@@ -147,5 +150,5 @@ jobs:
       - name: Upload real RunRecord
         uses: actions/upload-artifact@v4
         with:
-          name: apg-real-rosbag-replay-${{ matrix.task }}
+          name: apg-real-rosbag-replay-${{ matrix.run_key }}
           path: runs/latest/

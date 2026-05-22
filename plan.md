@@ -1349,7 +1349,16 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-22 after the ninth MVP implementation pass (every `rosbag_replay` benchmark now has a real baseline: the CI `real-rosbag-replay` job is matrix-expanded across `localization` and `perception`, and both baselines (`localization/ndt_baseline` and `perception/lidar_cluster_baseline`) carry `baseline_status="real"` populated from those CI runs. The strict-lint dry-run baseline count drops from 4 → 3 → 2; the remaining two baselines target `scenario_simulator_v2` benchmarks and need a pinned Autoware workspace).
+Updated on 2026-05-23 after the tenth MVP implementation pass (CI real-rosbag-replay matrix expanded from 2 → 3 entries: `localization-ndt`, `localization-icp`, `perception-cluster`. Localization is now the first benchmark in the repo for which **two** different experiments have real RunRecords produced by CI — the precondition for a real leaderboard row).
+
+The remaining stretch goal toward a leaderboard:
+
+- localization row: ndt_baseline vs icp_registration_toy — both real (this pass).
+- perception row: lidar_cluster_baseline only — needs a second experiment.
+- planning row: autoware_baseline + safe_gap_ttc_planner — both dry-run, blocked on scenario_simulator_v2.
+- prediction row: constant_velocity_baseline only — also blocked on scenario_simulator_v2.
+
+Once localization has two real RunRecords, the next pass can introduce `apg leaderboard` to aggregate `runs/<id>/result.json` files and any committed baselines into a benchmark × experiment metric table.
 
 The repository now has the benchmark-first dry-run scaffold in place, with
 stricter schemas, failure-tag cross-validation, README structure checks,
