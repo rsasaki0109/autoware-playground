@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-22 after the eighth MVP implementation pass (first **real** baseline committed: `benchmarks/localization/lidar_localization_replay_001/baselines/ndt_baseline/result.json` was replaced with the RunRecord produced by the CI `real-rosbag-replay` job — `baseline_status="real"`, `dry_run=False`, `status="completed"` — bringing the strict-lint dry-run baseline count from 4 down to 3).
+Updated on 2026-05-22 after the ninth MVP implementation pass (every `rosbag_replay` benchmark now has a real baseline: the CI `real-rosbag-replay` job is matrix-expanded across `localization` and `perception`, and both baselines (`localization/ndt_baseline` and `perception/lidar_cluster_baseline`) carry `baseline_status="real"` populated from those CI runs. The strict-lint dry-run baseline count drops from 4 → 3 → 2; the remaining two baselines target `scenario_simulator_v2` benchmarks and need a pinned Autoware workspace).
 
 The repository now has the benchmark-first dry-run scaffold in place, with
 stricter schemas, failure-tag cross-validation, README structure checks,
@@ -1500,16 +1500,18 @@ rtk proxy .venv/bin/apg compare runs/<left> runs/<right>
 rtk proxy .venv/bin/apg validate runs/latest/result.json
 ```
 
-Observed verification result (after eighth pass):
+Observed verification result (after ninth pass):
 
 ```text
 29 passed (incl. e2e: synthetic bag generated + ros2 bag play in test)
-apg validate . → validated 32 schema-backed file(s) (3 dry_run baseline warnings)
-apg lint .     → validation failed: 3 issue(s) (the 3 remaining dry_run baselines)
+apg validate . → validated 32 schema-backed file(s) (2 dry_run baseline warnings)
+apg lint .     → validation failed: 2 issue(s) (the 2 remaining dry_run baselines: planning + prediction, both scenario_simulator_v2)
 apg lint . --allow-dry-run-baselines → exit 0
-CI smoke real-rosbag-replay job (run 26278498200) → ✓ in 3m1s,
-  produced the RunRecord now committed at
-  benchmarks/localization/lidar_localization_replay_001/baselines/ndt_baseline/result.json
+CI smoke real-rosbag-replay matrix (run 26288087864) → ✓ both jobs
+  (localization in 2m54s, perception in 2m56s); the two RunRecords are
+  now committed as baselines under
+  benchmarks/localization/.../baselines/ndt_baseline/result.json and
+  benchmarks/perception/.../baselines/lidar_cluster_baseline/result.json
 apg preflight benchmarks/planning/lane_change_cut_in_001 → fails on
   this machine because AUTOWARE_WORKSPACE is unset and
   scenario_test_runner is not on PATH (expected — no Autoware here yet)
@@ -1606,13 +1608,20 @@ Resume from here:
      localization / prediction) with per-task report artifact upload
    - `smoke.yaml` adds a `compare` job that dry-runs the planning baseline
      and experiment side-by-side and uploads `apg compare --json` output
-10. Run real benchmark in CI and commit the first real baseline:
-    **DONE in seventh + eighth passes (rosbag_replay only).**
+10. Run real benchmark in CI and commit real baselines:
+    **DONE in seventh + eighth + ninth passes (rosbag_replay only).**
     - eighth pass: the RunRecord produced by the CI real-rosbag-replay
       job is now committed as the localization/ndt_baseline baseline,
-      replacing the dry-run stub. This is the first real baseline in
-      the repository; the strict-lint dry-run baseline count drops
-      from 4 to 3 as a result.
+      replacing the dry-run stub. The strict-lint dry-run baseline
+      count drops from 4 → 3 as a result.
+    - ninth pass: the CI real-rosbag-replay job is matrix-expanded
+      across `localization` and `perception`, and the perception
+      RunRecord is now committed as the perception/lidar_cluster_baseline
+      baseline. The strict-lint dry-run baseline count drops 3 → 2.
+      The two remaining dry-run baselines (`planning/autoware_baseline`
+      and `prediction/constant_velocity_baseline`) both target
+      `scenario_simulator_v2` benchmarks and need a pinned Autoware
+      workspace to be promoted to real.
     - `smoke.yaml` adds a `real-rosbag-replay` job that installs ROS 2
       jazzy via `ros-tooling/setup-ros@v0.7`, generates a synthetic
       rosbag with `tools/scripts/make_sample_rosbag.py`, runs

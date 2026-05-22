@@ -93,12 +93,15 @@ def test_report_command_accepts_run_directory(tmp_path):
 
 def test_lint_flags_dry_run_baselines(monkeypatch, capsys):
     monkeypatch.chdir(ROOT)
-    # The remaining three committed baselines are still dry-run
-    # (localization/ndt_baseline has been promoted to real via CI).
+    # Both rosbag_replay baselines (localization/ndt_baseline and
+    # perception/lidar_cluster_baseline) have been promoted to real via CI.
+    # The two remaining dry-run baselines target scenario_simulator_v2
+    # benchmarks (planning + prediction), which still need a pinned
+    # Autoware workspace to execute for real.
     assert main(["lint", "."]) == 1
     err = capsys.readouterr().err
     assert "baseline_status='dry_run'" in err
-    assert err.count("baseline_status='dry_run'") == 3
+    assert err.count("baseline_status='dry_run'") == 2
 
 
 def test_lint_allow_dry_run_baselines_passes(monkeypatch, capsys):

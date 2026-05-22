@@ -1,37 +1,75 @@
 {
   "api_version": "apg/v0",
-  "kind": "RunRecord",
-  "run_id": "baseline_static_obstacle_lidar_001_dry_run",
-  "experiment": "lidar_cluster_baseline",
-  "benchmark": "static_obstacle_lidar_001",
-  "mode": "shadow",
-  "git": {
-    "autoware_playground": null,
-    "autoware_universe": null
-  },
-  "runtime": {
-    "container_digest": null,
-    "ros_distro": "not_executed"
+  "artifacts": {
+    "failure_cards": null,
+    "plots": null,
+    "report": null,
+    "rosbag": "tools/scripts/make_sample_rosbag.py"
   },
   "assets": {
     "map_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
     "rosbag_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
   },
-  "metrics": {
-    "dry_run": true
-  },
-  "failures": [
-    "sim_invalid"
-  ],
-  "artifacts": {
-    "rosbag": null,
-    "report": null,
-    "plots": null
-  },
+  "benchmark": "static_obstacle_lidar_001",
   "execution": {
-    "status": "not_executed",
-    "dry_run": true,
-    "baseline_status": "dry_run"
+    "baseline_status": "real",
+    "dry_run": false,
+    "seed": 42,
+    "status": "completed"
   },
-  "reproduce": "apg run benchmarks/perception/static_obstacle_lidar_001 --experiment experiments/perception/lidar_cluster_baseline --dry-run"
+  "experiment": "lidar_cluster_baseline",
+  "failures": [],
+  "git": {
+    "autoware_playground": "b04ad50",
+    "autoware_universe": null
+  },
+  "kind": "RunRecord",
+  "metrics": {
+    "detection_latency_ms": null,
+    "missed_detection_count": null,
+    "no_large_false_positive_in_drivable_area": null,
+    "obstacle_detected": null,
+    "play_elapsed_sec": 1.449,
+    "play_returncode": 0,
+    "play_timed_out": false,
+    "rosbag_duration_sec": 0.9,
+    "rosbag_message_count": 10,
+    "rosbag_topic_count": 1
+  },
+  "mode": "shadow",
+  "reproduce": "apg run benchmarks/perception/static_obstacle_lidar_001 --experiment experiments/perception/lidar_cluster_baseline --headless",
+  "run_id": "baseline_static_obstacle_lidar_001_lidar_cluster_baseline_real",
+  "runtime": {
+    "container_digest": null,
+    "headless": true,
+    "preflight": {
+      "checks": [
+        {
+          "detail": "jazzy",
+          "name": "ROS_DISTRO",
+          "ok": true
+        },
+        {
+          "detail": "/opt/ros/jazzy/bin/ros2",
+          "name": "ros2",
+          "ok": true
+        }
+      ],
+      "ok": true,
+      "runner": "rosbag_replay"
+    },
+    "ros_distro": "jazzy",
+    "runner": "rosbag_replay",
+    "runner_hints": {
+      "backend": "rosbag_replay",
+      "dispatched": true,
+      "executed": true,
+      "experiment_mode": "shadow",
+      "headless": true,
+      "rosbag_source": "tools/scripts/make_sample_rosbag.py",
+      "seed": null,
+      "timeout_sec": 120
+    },
+    "source": "github_actions:smoke#real-rosbag-replay run 26288087864"
+  }
 }
