@@ -75,21 +75,22 @@ def _check_autoware_workspace(root: Path | None) -> PreflightCheck:
     )
 
 
-def base_checks(root: Path | None = None) -> list[PreflightCheck]:
+def base_checks() -> list[PreflightCheck]:
     return [
         _check_env("ROS_DISTRO"),
         _check_binary("ros2"),
-        _check_autoware_workspace(root),
     ]
 
 
 def preflight_for_runner(runner_type: str, *, root: Path | None = None) -> PreflightReport:
     report = PreflightReport(runner=runner_type)
-    report.checks.extend(base_checks(root))
+    report.checks.extend(base_checks())
     if runner_type == "scenario_simulator_v2":
+        report.checks.append(_check_autoware_workspace(root))
         report.checks.append(_check_binary("scenario_test_runner"))
     elif runner_type == "rosbag_replay":
-        report.checks.append(_check_binary("ros2"))
+        # rosbag_replay only needs ros2 + ros2 bag play; no Autoware workspace required.
+        pass
     elif runner_type in {"planning_simulator", "awsim"}:
         report.checks.append(
             PreflightCheck(

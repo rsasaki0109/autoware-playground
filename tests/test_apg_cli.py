@@ -330,6 +330,14 @@ def test_preflight_reports_missing_environment(monkeypatch):
     assert {"ROS_DISTRO", "ros2", "autoware_workspace", "scenario_test_runner"}.issubset(names)
 
 
+def test_preflight_rosbag_replay_does_not_require_autoware_workspace(monkeypatch):
+    monkeypatch.delenv("AUTOWARE_WORKSPACE", raising=False)
+    report = preflight_for_runner("rosbag_replay", root=ROOT)
+    names = {check.name for check in report.checks}
+    assert "autoware_workspace" not in names
+    assert "scenario_test_runner" not in names
+
+
 def test_runner_execute_raises_for_unconnected_runner():
     import pytest
 
@@ -341,14 +349,78 @@ def test_runner_execute_raises_for_unconnected_runner():
             headless=True,
             seed=None,
         )
-    with pytest.raises(ApgRunnerError, match="not connected yet"):
+
+
+def test_rosbag_replay_execute_errors_when_bag_missing(monkeypatch):
+    import pytest
+
+    monkeypatch.delenv("APG_DATA", raising=False)
+    with pytest.raises(ApgRunnerError, match="unresolved variables|not found"):
         runner_execute(
             "rosbag_replay",
-            benchmark={"runner": {"type": "rosbag_replay"}},
+            benchmark={"runner": {"type": "rosbag_replay", "rosbag": "$APG_DATA/missing"}},
             experiment={"mode": "offline_replay"},
             headless=True,
             seed=None,
         )
+
+
+def test_rosbag_replay_execute_errors_when_path_missing(tmp_path):
+    import pytest
+
+    missing = tmp_path / "no_such_bag"
+    with pytest.raises(ApgRunnerError, match="not found"):
+        runner_execute(
+            "rosbag_replay",
+            benchmark={"runner": {"type": "rosbag_replay", "rosbag": str(missing)}},
+            experiment={"mode": "offline_replay"},
+            headless=True,
+            seed=None,
+        )
+
+
+def test_rosbag_replay_execute_end_to_end(tmp_path):
+    import importlib.util
+    import shutil as _shutil
+    import sys as _sys
+
+    import pytest
+
+    if importlib.util.find_spec("rosbag2_py") is None:
+        pytest.skip("rosbag2_py not available")
+    if importlib.util.find_spec("std_msgs") is None:
+        pytest.skip("std_msgs not available")
+    if not _shutil.which("ros2"):
+        pytest.skip("ros2 not on PATH")
+
+    _sys.path.insert(0, str(ROOT / "tools" / "scripts"))
+    try:
+        from make_sample_rosbag import write_bag
+    finally:
+        _sys.path.pop(0)
+
+    bag_dir = tmp_path / "sample_bag"
+    write_bag(bag_dir, messages=5)
+
+    outcome = runner_execute(
+        "rosbag_replay",
+        benchmark={
+            "runner": {
+                "type": "rosbag_replay",
+                "rosbag": str(bag_dir),
+                "timeout_sec": 30,
+            },
+            "gates": {},
+        },
+        experiment={"mode": "offline_replay"},
+        headless=True,
+        seed=None,
+    )
+    assert outcome.runner == "rosbag_replay"
+    assert outcome.metrics["play_returncode"] == 0
+    assert outcome.metrics["rosbag_message_count"] == 5
+    assert outcome.metrics["rosbag_topic_count"] == 1
+    assert outcome.failures == []
 
 
 def test_run_real_fails_preflight(monkeypatch):
@@ -361,6 +433,46 @@ def test_run_real_fails_preflight(monkeypatch):
             ROOT / "benchmarks" / "planning" / "lane_change_cut_in_001",
             ROOT / "experiments" / "planning" / "autoware_baseline",
         )
+
+
+def test_run_real_writes_record_when_runner_succeeds(monkeypatch, tmp_path):
+    # Stub out preflight and runner_execute so we can exercise the
+    # RunRecord-writing branch without launching real ROS processes.
+    from apg import run as run_module
+    from apg.preflight import PreflightCheck, PreflightReport
+    from apg.runners.base import RunnerOutcome
+
+    def fake_preflight(runner_type, *, root=None):
+        return PreflightReport(
+            runner=runner_type,
+            checks=[PreflightCheck(name="stub", ok=True, detail="ok")],
+        )
+
+    def fake_execute(runner_type, *, benchmark, experiment, headless, seed):
+        return RunnerOutcome(
+            runner=runner_type,
+            metrics={"rosbag_duration_sec": 1.5, "rosbag_message_count": 42},
+            failures=[],
+            runtime_hints={"backend": "rosbag_replay", "executed": True, "rosbag": "/tmp/x"},
+        )
+
+    monkeypatch.setattr(run_module, "preflight_for_runner", fake_preflight)
+    monkeypatch.setattr(run_module, "runner_execute", fake_execute)
+    monkeypatch.setenv("ROS_DISTRO", "jazzy")
+
+    result_path = run_real(
+        ROOT / "benchmarks" / "localization" / "lidar_localization_replay_001",
+        ROOT / "experiments" / "localization" / "ndt_baseline",
+        output_root=tmp_path,
+    )
+    assert result_path.is_file()
+    record = json.loads(result_path.read_text(encoding="utf-8"))
+    assert record["execution"]["dry_run"] is False
+    assert record["execution"]["baseline_status"] == "real"
+    assert record["execution"]["status"] == "completed"
+    assert record["runtime"]["runner"] == "rosbag_replay"
+    assert record["runtime"]["preflight"]["ok"] is True
+    assert record["metrics"]["rosbag_duration_sec"] == 1.5
 
 
 def test_apg_run_without_dry_run_uses_real_path(monkeypatch, capsys):

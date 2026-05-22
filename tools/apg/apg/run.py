@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 from datetime import datetime, timezone
@@ -246,22 +247,39 @@ def run_real(
     report: bool = False,
 ) -> Path:
     root = find_repo_root(benchmark_path)
+    benchmark_path = benchmark_path.resolve()
+    experiment_path = experiment_path.resolve()
+
     benchmark_manifest_path, benchmark_dir = _resolve_manifest_path(
-        benchmark_path.resolve(), "benchmark.yaml"
+        benchmark_path, "benchmark.yaml"
     )
     experiment_manifest_path, experiment_dir = _resolve_manifest_path(
-        experiment_path.resolve(), "experiment.yaml"
+        experiment_path, "experiment.yaml"
     )
+
+    validation = validate_path(benchmark_dir)
+    validation.extend(validate_path(experiment_dir))
+    if not validation.ok:
+        raise ApgRunError("\n".join(validation.errors))
+
     benchmark = load_document(benchmark_manifest_path)
     experiment = load_document(experiment_manifest_path)
+    if benchmark.get("task") != experiment.get("task"):
+        raise ApgRunError(
+            f"benchmark task {benchmark.get('task')!r} does not match"
+            f" experiment task {experiment.get('task')!r}"
+        )
+
     runner_type = (benchmark.get("runner") or {}).get("type")
     if not runner_type:
         raise ApgRunError(f"{benchmark_manifest_path}: runner.type is required")
 
-    report_obj = preflight_for_runner(runner_type, root=root)
-    if not report_obj.ok:
+    preflight_report = preflight_for_runner(runner_type, root=root)
+    if not preflight_report.ok:
         failed = ", ".join(
-            f"{check.name}({check.detail})" for check in report_obj.checks if not check.ok
+            f"{check.name}({check.detail})"
+            for check in preflight_report.checks
+            if not check.ok
         )
         raise ApgRunError(
             f"preflight failed for runner {runner_type!r}: {failed}."
@@ -269,7 +287,7 @@ def run_real(
         )
 
     try:
-        runner_execute(
+        outcome = runner_execute(
             runner_type,
             benchmark=benchmark,
             experiment=experiment,
@@ -279,13 +297,76 @@ def run_real(
     except ApgRunnerError as exc:
         raise ApgRunError(str(exc)) from exc
 
-    # Real execution returned an outcome (future work), but writing the
-    # resulting RunRecord is not implemented yet — runner_execute always
-    # raises today.
-    _ = (output_root, report, run_real)
-    raise ApgRunError(
-        "real RunRecord writer is not implemented yet — see plan.md §27 item 5"
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    run_id = f"{timestamp}_{benchmark['name']}_{experiment['name']}_real"
+    runs_root = output_root or (root / "runs")
+    run_dir = runs_root / run_id
+    run_dir.mkdir(parents=True, exist_ok=False)
+
+    benchmark_rel = benchmark_dir.relative_to(root).as_posix()
+    experiment_rel = experiment_dir.relative_to(root).as_posix()
+    command = f"apg run {benchmark_rel} --experiment {experiment_rel}"
+    if headless:
+        command += " --headless"
+    if seed is not None:
+        command += f" --seed {seed}"
+    if report:
+        command += " --report"
+
+    failure_card_paths = _write_failure_cards(
+        run_dir,
+        benchmark_name=benchmark["name"],
+        experiment_name=experiment["name"],
+        run_id=run_id,
+        failures=outcome.failures,
     )
+    failure_card_rels = [
+        path.relative_to(run_dir).as_posix() for path in failure_card_paths
+    ]
+
+    result = {
+        "api_version": "apg/v0",
+        "kind": "RunRecord",
+        "run_id": run_id,
+        "experiment": experiment["name"],
+        "benchmark": benchmark["name"],
+        "mode": experiment["mode"],
+        "git": {
+            "autoware_playground": _git_value(root, "rev-parse", "--short", "HEAD"),
+            "autoware_universe": None,
+        },
+        "runtime": {
+            "container_digest": None,
+            "ros_distro": os.environ.get("ROS_DISTRO") or "unknown",
+            "headless": headless,
+            "runner": outcome.runner,
+            "runner_hints": outcome.runtime_hints,
+            "preflight": preflight_report.to_dict(),
+        },
+        "assets": _asset_hashes(root, benchmark),
+        "metrics": outcome.metrics,
+        "failures": outcome.failures,
+        "artifacts": {
+            "rosbag": outcome.runtime_hints.get("rosbag"),
+            "report": "report.html" if report else None,
+            "plots": None,
+            "failure_cards": failure_card_rels or None,
+        },
+        "execution": {
+            "status": "failed" if outcome.failures else "completed",
+            "dry_run": False,
+            "baseline_status": "real",
+            "seed": seed if seed is not None else experiment.get("reproducibility", {}).get("random_seed"),
+        },
+        "reproduce": command,
+    }
+
+    result_path = run_dir / "result.json"
+    result_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if report:
+        write_report(result_path)
+    _copy_latest(result_path, report=report, failure_cards=failure_card_paths)
+    return result_path
 
 
 def run_demo(
