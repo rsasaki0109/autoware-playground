@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-23 after the eleventh MVP implementation pass (first `apg leaderboard` prototype: aggregates committed baselines and local `runs/*/result.json` records into a benchmark × experiment metric table. Localization already shows two real RunRecords (`ndt_baseline` baseline + `icp_registration_toy` from runs); `text` / `markdown` / `json` output formats supported).
+Updated on 2026-05-23 after the twelfth MVP implementation pass (CI now publishes a leaderboard: a new `leaderboard` job in `smoke.yaml` waits for the entire `real-rosbag-replay` matrix, downloads every per-task RunRecord, stages them into `runs/`, runs `apg leaderboard` in all three formats, and uploads the resulting table as an `apg-leaderboard` artifact).
 
 The remaining stretch goal toward a leaderboard:
 
@@ -1659,11 +1659,15 @@ Resume from here:
       metric keys actually present in the entries
     - `apg leaderboard --format {text,markdown,json}` emits the
       aggregate; tests cover dataclass + the three output formats
-    - still TODO: wire `apg leaderboard` into CI so the aggregated
-      table (including all RunRecords produced by the `real-rosbag-replay`
-      matrix on the current push) is uploaded per push; once that
-      is in, surface it via a static report or by committing it back
-      to `reports/leaderboard.md`
+    - twelfth pass: `smoke.yaml` gains a `leaderboard` job that
+      `needs: real-rosbag-replay`, downloads every
+      `apg-real-rosbag-replay-*` artifact, stages them into `runs/`,
+      runs `apg leaderboard` in all three formats, and uploads the
+      result as an `apg-leaderboard` artifact (containing
+      `leaderboard.md`, `leaderboard.json`, `leaderboard.txt`)
+    - still TODO: surface the leaderboard outside of CI artifacts
+      (e.g. commit a generated `reports/leaderboard.md` on `main`,
+      or render an HTML page from the JSON)
 
 ## 28. Implementation Notes For Next Session
 
