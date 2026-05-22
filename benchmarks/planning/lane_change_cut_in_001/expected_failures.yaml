@@ -1,0 +1,10 @@
+api_version: apg/v0
+kind: ExpectedFailures
+
+expected_failures:
+  - tag: near_miss
+    reason: Candidate trajectory may accept a gap with low TTC during the cut-in.
+  - tag: planner_oscillation
+    reason: Candidate lateral shift may alternate when the target-lane gap changes quickly.
+  - tag: sim_invalid
+    reason: Scenario assets are placeholders until real Scenario Simulator v2 data is connected.

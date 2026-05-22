@@ -1,0 +1,8 @@
+api_version: apg/v0
+kind: ExpectedFailures
+
+expected_failures:
+  - tag: missed_detection
+    reason: Baseline clustering may miss low-return or partially occluded static objects.
+  - tag: sim_invalid
+    reason: Replay data is a manifest placeholder until real assets are attached.

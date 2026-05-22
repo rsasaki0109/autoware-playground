@@ -1,0 +1,14 @@
+api_version: apg/v0
+kind: ScenarioStub
+
+name: lane_change_cut_in_001
+runner: scenario_simulator_v2
+description: Placeholder scenario manifest for the MVP dry-run path.
+
+actors:
+  ego:
+    behavior: lane_change
+  target_lane_vehicle:
+    behavior: cut_in
+
+status: stub

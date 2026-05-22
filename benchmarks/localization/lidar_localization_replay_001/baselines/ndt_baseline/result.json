@@ -1,0 +1,36 @@
+{
+  "api_version": "apg/v0",
+  "kind": "RunRecord",
+  "run_id": "baseline_lidar_localization_replay_001_dry_run",
+  "experiment": "ndt_baseline",
+  "benchmark": "lidar_localization_replay_001",
+  "mode": "offline_replay",
+  "git": {
+    "autoware_playground": null,
+    "autoware_universe": null
+  },
+  "runtime": {
+    "container_digest": null,
+    "ros_distro": "not_executed"
+  },
+  "assets": {
+    "map_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "rosbag_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "metrics": {
+    "dry_run": true
+  },
+  "failures": [
+    "sim_invalid"
+  ],
+  "artifacts": {
+    "rosbag": null,
+    "report": null,
+    "plots": null
+  },
+  "execution": {
+    "status": "not_executed",
+    "dry_run": true
+  },
+  "reproduce": "apg run benchmarks/localization/lidar_localization_replay_001 --experiment experiments/localization/ndt_baseline --dry-run"
+}

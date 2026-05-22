@@ -1,0 +1,44 @@
+api_version: apg/v0
+kind: MetricConfig
+
+sources:
+  - name: rosbag_replay
+    type: rosbag_replay
+  - name: awpg_offline_metrics
+    type: python
+
+metrics:
+  pose_output_available:
+    source: rosbag_replay
+    type: boolean
+    required: true
+  no_localization_lost:
+    source: awpg_offline_metrics
+    type: boolean
+    required: true
+  ate_m:
+    source: awpg_offline_metrics
+    reducer: mean
+    required: false
+  rpe_m:
+    source: awpg_offline_metrics
+    reducer: mean
+    required: false
+  convergence_time_sec:
+    source: awpg_offline_metrics
+    reducer: first_valid
+    required: false
+  pose_jump_count:
+    source: awpg_offline_metrics
+    reducer: count
+    required: false
+  cpu_time_ms:
+    source: awpg_offline_metrics
+    reducer: mean
+    required: false
+
+report:
+  plots:
+    - pose_error
+    - convergence
+    - cpu_time

@@ -1,0 +1,47 @@
+api_version: apg/v0
+kind: MetricConfig
+
+sources:
+  - name: scenario_result
+    type: scenario_simulator_v2
+  - name: autoware_planning_evaluator
+    type: ros2_node
+  - name: awpg_offline_metrics
+    type: python
+
+metrics:
+  no_collision:
+    source: scenario_result
+    type: boolean
+    required: true
+  route_completion:
+    source: awpg_offline_metrics
+    reducer: final
+    required: true
+  min_ttc_sec:
+    source: autoware_planning_evaluator
+    reducer: min
+    required: false
+  max_jerk_mps3:
+    source: autoware_planning_evaluator
+    reducer: max
+    required: false
+  lateral_acceleration_mps2:
+    source: autoware_planning_evaluator
+    reducer: max_abs
+    required: false
+  trajectory_stability:
+    source: awpg_offline_metrics
+    reducer: summary
+    required: false
+  planner_oscillation:
+    source: awpg_offline_metrics
+    type: boolean
+    required: false
+
+report:
+  plots:
+    - ego_speed
+    - min_ttc
+    - lateral_acceleration
+    - trajectory_overlay

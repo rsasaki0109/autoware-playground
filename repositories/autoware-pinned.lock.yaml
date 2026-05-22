@@ -1,0 +1,10 @@
+api_version: apg/v0
+kind: AutowareLock
+
+status: placeholder
+description: >
+  This lock file reserves the reproducibility contract for pinned Autoware
+  workspace references. It intentionally performs no download in MVP dry-run
+  workflows.
+
+repositories: []

@@ -1,0 +1,9 @@
+services:
+  apg:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    working_dir: /workspace/autoware-playground
+    volumes:
+      - ..:/workspace/autoware-playground
+    command: bash

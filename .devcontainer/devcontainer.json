@@ -1,0 +1,20 @@
+{
+  "name": "autoware-playground",
+  "build": {
+    "dockerfile": "../docker/Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspace/autoware-playground",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace/autoware-playground,type=bind,consistency=cached"
+  ],
+  "postCreateCommand": "python3 -m pip install -e tools/apg",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-iot.vscode-ros"
+      ]
+    }
+  }
+}

@@ -1,0 +1,10 @@
+api_version: apg/v0
+kind: BenchmarkAssets
+
+assets:
+  map: assets/maps/sample_map/asset.yaml
+  scenario: null
+  rosbag: assets/rosbags/sample_lidar_localization/asset.yaml
+
+notes:
+  - MVP dry-run validates the rosbag asset manifest but does not replay data.

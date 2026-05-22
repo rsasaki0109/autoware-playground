@@ -1,0 +1,38 @@
+api_version: apg/v0
+kind: Experiment
+
+name: autoware_baseline
+task: planning
+slot: planning.motion
+mode: baseline
+
+paper:
+  title: "Autoware upstream planning baseline"
+  venue: null
+  year: null
+  url: https://github.com/autowarefoundation/autoware
+
+autoware:
+  tested_with:
+    autoware_lock: repositories/autoware-pinned.lock.yaml
+
+interfaces:
+  inputs:
+    - topic: /planning/scenario_planning/trajectory
+      type: autoware_planning_msgs/msg/Trajectory
+  outputs:
+    - topic: /planning/scenario_planning/trajectory
+      type: autoware_planning_msgs/msg/Trajectory
+
+launch:
+  reason_not_needed: Uses the benchmark Autoware launch entrypoint as the baseline; no experiment-specific node is launched.
+
+benchmarks:
+  smoke:
+    - benchmarks/planning/lane_change_cut_in_001
+  recommended:
+    - benchmarks/planning/lane_change_cut_in_001
+
+reproducibility:
+  random_seed: 42
+  deterministic: true

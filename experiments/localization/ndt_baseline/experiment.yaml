@@ -1,0 +1,40 @@
+api_version: apg/v0
+kind: Experiment
+
+name: ndt_baseline
+task: localization
+slot: localization.pose_estimator
+mode: offline_replay
+
+paper:
+  title: "Autoware upstream NDT localization baseline"
+  venue: null
+  year: null
+  url: https://github.com/autowarefoundation/autoware
+
+autoware:
+  tested_with:
+    autoware_lock: repositories/autoware-pinned.lock.yaml
+
+interfaces:
+  inputs:
+    - topic: /sensing/lidar/pointcloud
+      type: sensor_msgs/msg/PointCloud2
+    - topic: /initialpose
+      type: geometry_msgs/msg/PoseWithCovarianceStamped
+  outputs:
+    - topic: /localization/kinematic_state
+      type: nav_msgs/msg/Odometry
+
+launch:
+  reason_not_needed: Uses the benchmark Autoware launch entrypoint for the upstream localization baseline.
+
+benchmarks:
+  smoke:
+    - benchmarks/localization/lidar_localization_replay_001
+  recommended:
+    - benchmarks/localization/lidar_localization_replay_001
+
+reproducibility:
+  random_seed: 42
+  deterministic: true

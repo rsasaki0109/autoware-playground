@@ -1,0 +1,45 @@
+api_version: apg/v0
+kind: Experiment
+
+name: icp_registration_toy
+task: localization
+slot: localization.pose_estimator
+mode: offline_replay
+
+paper:
+  title: "Toy ICP Registration Localizer"
+  venue: example
+  year: 2026
+  url: null
+
+autoware:
+  tested_with:
+    autoware_lock: repositories/autoware-pinned.lock.yaml
+
+interfaces:
+  inputs:
+    - topic: /sensing/lidar/pointcloud
+      type: sensor_msgs/msg/PointCloud2
+    - topic: /map/pointcloud_map
+      type: sensor_msgs/msg/PointCloud2
+    - topic: /initialpose
+      type: geometry_msgs/msg/PoseWithCovarianceStamped
+  outputs:
+    - topic: /awpg/experiments/icp_registration_toy/pose
+      type: geometry_msgs/msg/PoseStamped
+
+launch:
+  package: awpg_icp_registration_toy
+  file: launch/icp_registration_toy.launch.py
+  params:
+    - params/default.yaml
+
+benchmarks:
+  smoke:
+    - benchmarks/localization/lidar_localization_replay_001
+  recommended:
+    - benchmarks/localization/lidar_localization_replay_001
+
+reproducibility:
+  random_seed: 42
+  deterministic: true

@@ -1,0 +1,45 @@
+api_version: apg/v0
+kind: Experiment
+
+name: safe_gap_ttc_planner
+task: planning
+slot: planning.motion
+mode: shadow
+
+paper:
+  title: "Safe Gap Selection for Lane Change under Cut-in Risk"
+  venue: example
+  year: 2026
+  url: null
+
+autoware:
+  tested_with:
+    autoware_lock: repositories/autoware-pinned.lock.yaml
+
+interfaces:
+  inputs:
+    - topic: /planning/scenario_planning/trajectory
+      type: autoware_planning_msgs/msg/Trajectory
+    - topic: /perception/object_recognition/objects
+      type: autoware_perception_msgs/msg/PredictedObjects
+    - topic: /localization/kinematic_state
+      type: nav_msgs/msg/Odometry
+  outputs:
+    - topic: /awpg/experiments/safe_gap_ttc_planner/trajectory
+      type: autoware_planning_msgs/msg/Trajectory
+
+launch:
+  package: awpg_safe_gap_ttc_planner
+  file: launch/safe_gap_ttc_planner.launch.py
+  params:
+    - params/default.yaml
+
+benchmarks:
+  smoke:
+    - benchmarks/planning/lane_change_cut_in_001
+  recommended:
+    - benchmarks/planning/lane_change_cut_in_001
+
+reproducibility:
+  random_seed: 42
+  deterministic: true

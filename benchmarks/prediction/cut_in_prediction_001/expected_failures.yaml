@@ -1,0 +1,10 @@
+api_version: apg/v0
+kind: ExpectedFailures
+
+expected_failures:
+  - tag: near_miss
+    reason: Constant-velocity prediction may under-estimate cut-in intent.
+  - tag: missed_detection
+    reason: Upstream perception may not emit the actor required for prediction scoring.
+  - tag: sim_invalid
+    reason: Scenario assets are placeholders until real Scenario Simulator v2 data is connected.

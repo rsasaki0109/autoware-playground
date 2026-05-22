@@ -1,0 +1,41 @@
+api_version: apg/v0
+kind: Experiment
+
+name: lidar_cluster_baseline
+task: perception
+slot: perception.objects3d
+mode: shadow
+
+paper:
+  title: "Classical LiDAR clustering baseline"
+  venue: null
+  year: null
+  url: null
+
+autoware:
+  tested_with:
+    autoware_lock: repositories/autoware-pinned.lock.yaml
+
+interfaces:
+  inputs:
+    - topic: /sensing/lidar/pointcloud
+      type: sensor_msgs/msg/PointCloud2
+  outputs:
+    - topic: /awpg/experiments/lidar_cluster_baseline/objects
+      type: autoware_perception_msgs/msg/PredictedObjects
+
+launch:
+  package: awpg_lidar_cluster_baseline
+  file: launch/lidar_cluster_baseline.launch.py
+  params:
+    - params/default.yaml
+
+benchmarks:
+  smoke:
+    - benchmarks/perception/static_obstacle_lidar_001
+  recommended:
+    - benchmarks/perception/static_obstacle_lidar_001
+
+reproducibility:
+  random_seed: 42
+  deterministic: true

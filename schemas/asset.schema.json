@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autoware-playground.local/schemas/asset.schema.json",
+  "title": "AssetManifest",
+  "type": "object",
+  "required": [
+    "api_version",
+    "kind",
+    "name",
+    "type",
+    "version",
+    "source",
+    "integrity",
+    "layout",
+    "privacy",
+    "used_by"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "apg/v0"
+    },
+    "kind": {
+      "const": "Asset"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "map",
+        "rosbag",
+        "scenario",
+        "model",
+        "config"
+      ]
+    },
+    "version": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "uri",
+        "license",
+        "attribution"
+      ],
+      "properties": {
+        "uri": {
+          "type": "string"
+        },
+        "license": {
+          "type": "string"
+        },
+        "attribution": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "integrity": {
+      "type": "object",
+      "required": [
+        "sha256",
+        "size_bytes"
+      ],
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": true
+    },
+    "layout": {
+      "type": "object",
+      "required": [
+        "unpack_to"
+      ],
+      "properties": {
+        "unpack_to": {
+          "type": "string"
+        },
+        "rosbag_storage": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "privacy": {
+      "type": "object",
+      "properties": {
+        "contains_faces": {
+          "type": "boolean"
+        },
+        "contains_license_plates": {
+          "type": "boolean"
+        },
+        "anonymized": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "used_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

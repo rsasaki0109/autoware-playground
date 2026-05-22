@@ -1,0 +1,6 @@
+icp_registration_toy:
+  ros__parameters:
+    max_iterations: 20
+    max_correspondence_distance_m: 2.0
+    convergence_epsilon: 0.001
+    output_frame: map

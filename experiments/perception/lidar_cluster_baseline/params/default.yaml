@@ -1,0 +1,7 @@
+lidar_cluster_baseline:
+  ros__parameters:
+    voxel_leaf_size_m: 0.2
+    cluster_tolerance_m: 0.8
+    min_cluster_points: 8
+    max_cluster_points: 20000
+    output_frame: map

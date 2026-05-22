@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autoware-playground.local/schemas/benchmark_assets.schema.json",
+  "title": "BenchmarkAssets",
+  "type": "object",
+  "required": [
+    "api_version",
+    "kind",
+    "assets"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "apg/v0"
+    },
+    "kind": {
+      "const": "BenchmarkAssets"
+    },
+    "assets": {
+      "type": "object",
+      "properties": {
+        "map": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scenario": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rosbag": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

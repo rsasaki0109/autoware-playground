@@ -1,0 +1,36 @@
+{
+  "api_version": "apg/v0",
+  "kind": "RunRecord",
+  "run_id": "baseline_cut_in_prediction_001_dry_run",
+  "experiment": "constant_velocity_baseline",
+  "benchmark": "cut_in_prediction_001",
+  "mode": "shadow",
+  "git": {
+    "autoware_playground": null,
+    "autoware_universe": null
+  },
+  "runtime": {
+    "container_digest": null,
+    "ros_distro": "not_executed"
+  },
+  "assets": {
+    "map_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "scenario_sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "metrics": {
+    "dry_run": true
+  },
+  "failures": [
+    "sim_invalid"
+  ],
+  "artifacts": {
+    "rosbag": null,
+    "report": null,
+    "plots": null
+  },
+  "execution": {
+    "status": "not_executed",
+    "dry_run": true
+  },
+  "reproduce": "apg run benchmarks/prediction/cut_in_prediction_001 --experiment experiments/prediction/constant_velocity_baseline --dry-run"
+}

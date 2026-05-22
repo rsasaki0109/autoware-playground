@@ -1,0 +1,49 @@
+api_version: apg/v0
+kind: Benchmark
+
+name: lidar_localization_replay_001
+task: localization
+description: LiDAR localization replay benchmark for pose estimator experiments.
+
+runner:
+  type: rosbag_replay
+  headless: true
+  timeout_sec: 120
+  scenario: null
+  rosbag: "$APG_DATA/rosbags/sample_lidar_localization_bag"
+
+assets:
+  map: assets/maps/sample_map/asset.yaml
+  scenario: null
+  rosbag: assets/rosbags/sample_lidar_localization/asset.yaml
+
+autoware:
+  launch:
+    package: autoware_launch
+    file: logging_simulator.launch.xml
+  vehicle_model: sample_vehicle
+  sensor_model: sample_sensor_kit
+
+metrics:
+  config: metrics.yaml
+
+gates:
+  required:
+    - name: pose_output_available
+      op: "=="
+      value: true
+    - name: no_localization_lost
+      op: "=="
+      value: true
+  diagnostic:
+    - name: convergence_time_sec
+      op: "<="
+      value: 10.0
+    - name: pose_jump_count
+      op: "<="
+      value: 0
+
+failure_taxonomy:
+  - localization_lost
+  - off_route
+  - sim_invalid

@@ -1,0 +1,31 @@
+api_version: apg/v0
+kind: Asset
+
+name: sample_map
+type: map
+version: 0.1.0
+
+source:
+  uri: https://example.invalid/autoware-playground/assets/sample_map.tar.zst
+  license: CC-BY-4.0
+  attribution: Example Dataset Provider
+
+integrity:
+  sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+  size_bytes: 0
+
+layout:
+  unpack_to: "$APG_DATA/maps/sample_map"
+  lanelet2_map: lanelet2_map.osm
+  pointcloud_map: pointcloud_map.pcd
+
+privacy:
+  contains_faces: false
+  contains_license_plates: false
+  anonymized: true
+
+used_by:
+  - benchmarks/planning/lane_change_cut_in_001
+  - benchmarks/localization/lidar_localization_replay_001
+  - benchmarks/perception/static_obstacle_lidar_001
+  - benchmarks/prediction/cut_in_prediction_001

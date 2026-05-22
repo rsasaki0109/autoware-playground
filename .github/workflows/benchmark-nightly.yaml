@@ -1,0 +1,25 @@
+name: benchmark-nightly
+
+on:
+  schedule:
+    - cron: "19 15 * * *"
+  workflow_dispatch:
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install apg
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e tools/apg
+      - name: Validate manifests
+        run: apg validate .
+      - name: List benchmark matrix
+        run: |
+          apg list benchmarks
+          apg list experiments

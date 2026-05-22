@@ -1,0 +1,40 @@
+api_version: apg/v0
+kind: MetricConfig
+
+sources:
+  - name: rosbag_replay
+    type: rosbag_replay
+  - name: awpg_offline_metrics
+    type: python
+
+metrics:
+  obstacle_detected:
+    source: awpg_offline_metrics
+    type: boolean
+    required: true
+  no_large_false_positive_in_drivable_area:
+    source: awpg_offline_metrics
+    type: boolean
+    required: true
+  detection_latency_ms:
+    source: awpg_offline_metrics
+    reducer: max
+    required: false
+  object_center_error_m:
+    source: awpg_offline_metrics
+    reducer: mean
+    required: false
+  occupancy_iou:
+    source: awpg_offline_metrics
+    reducer: mean
+    required: false
+  missed_detection_count:
+    source: awpg_offline_metrics
+    reducer: count
+    required: false
+
+report:
+  plots:
+    - detection_latency
+    - obstacle_overlay
+    - occupancy_iou

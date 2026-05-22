@@ -1,0 +1,20 @@
+api_version: apg/v0
+kind: FailureTaxonomy
+
+failure_tags:
+  collision:
+    description: Ego or relevant actor collided with another object.
+  near_miss:
+    description: Minimum safety margin or TTC crossed a diagnostic threshold without collision.
+  deadlock:
+    description: Ego stopped or oscillated without completing the route within the allowed time.
+  off_route:
+    description: Ego left the expected route or drivable corridor.
+  localization_lost:
+    description: Pose estimate became unavailable, jumped, or diverged beyond benchmark limits.
+  missed_detection:
+    description: Required obstacle or actor was not detected within the expected time window.
+  planner_oscillation:
+    description: Candidate or commanded trajectory repeatedly changed direction or intent.
+  sim_invalid:
+    description: Simulator, replay, asset, or runner failure made the benchmark result invalid.

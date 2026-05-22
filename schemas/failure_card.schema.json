@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autoware-playground.local/schemas/failure_card.schema.json",
+  "title": "FailureCard",
+  "type": "object",
+  "required": [
+    "api_version",
+    "kind",
+    "failure"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "apg/v0"
+    },
+    "kind": {
+      "const": "FailureCard"
+    },
+    "failure": {
+      "type": "object",
+      "required": [
+        "benchmark",
+        "experiment",
+        "tag"
+      ],
+      "properties": {
+        "benchmark": {
+          "type": "string"
+        },
+        "experiment": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "run_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "time_range_sec": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "symptoms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "artifacts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "suggested_next_scenarios": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

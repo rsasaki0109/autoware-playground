@@ -1,0 +1,38 @@
+api_version: apg/v0
+kind: Experiment
+
+name: constant_velocity_baseline
+task: prediction
+slot: prediction.objects
+mode: shadow
+
+paper:
+  title: "Constant velocity prediction baseline"
+  venue: null
+  year: null
+  url: null
+
+autoware:
+  tested_with:
+    autoware_lock: repositories/autoware-pinned.lock.yaml
+
+interfaces:
+  inputs:
+    - topic: /perception/object_recognition/objects
+      type: autoware_perception_msgs/msg/PredictedObjects
+  outputs:
+    - topic: /awpg/experiments/constant_velocity_baseline/objects
+      type: autoware_perception_msgs/msg/PredictedObjects
+
+launch:
+  reason_not_needed: MVP dry-run baseline only; add a ROS launch file when the executable prediction node is introduced.
+
+benchmarks:
+  smoke:
+    - benchmarks/prediction/cut_in_prediction_001
+  recommended:
+    - benchmarks/prediction/cut_in_prediction_001
+
+reproducibility:
+  random_seed: 42
+  deterministic: true

@@ -1,0 +1,30 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+build/
+install/
+log/
+*.egg-info/
+dist/
+htmlcov/
+.coverage
+.DS_Store
+
+# Generated benchmark outputs.
+runs/*
+!runs/.gitignore
+
+# Large data must be referenced through asset manifests, not committed.
+*.bag
+*.db3
+*.mcap
+*.pcd
+*.pcap
+*.tar
+*.tar.gz
+*.tar.zst
+*.zip

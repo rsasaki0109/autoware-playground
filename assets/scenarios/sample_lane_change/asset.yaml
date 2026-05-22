@@ -1,0 +1,28 @@
+api_version: apg/v0
+kind: Asset
+
+name: sample_lane_change_scenario
+type: scenario
+version: 0.1.0
+
+source:
+  uri: https://example.invalid/autoware-playground/assets/sample_lane_change_scenario.tar.zst
+  license: CC-BY-4.0
+  attribution: Example Scenario Provider
+
+integrity:
+  sha256: "2222222222222222222222222222222222222222222222222222222222222222"
+  size_bytes: 0
+
+layout:
+  unpack_to: "$APG_DATA/scenarios/sample_lane_change"
+  scenario_file: scenario.yaml
+
+privacy:
+  contains_faces: false
+  contains_license_plates: false
+  anonymized: true
+
+used_by:
+  - benchmarks/planning/lane_change_cut_in_001
+  - benchmarks/prediction/cut_in_prediction_001

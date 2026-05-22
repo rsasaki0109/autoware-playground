@@ -1,0 +1,36 @@
+api_version: apg/v0
+kind: MetricConfig
+
+sources:
+  - name: scenario_result
+    type: scenario_simulator_v2
+  - name: awpg_offline_metrics
+    type: python
+
+metrics:
+  prediction_topic_available:
+    source: awpg_offline_metrics
+    type: boolean
+    required: true
+  minADE:
+    source: awpg_offline_metrics
+    reducer: min
+    required: false
+  minFDE:
+    source: awpg_offline_metrics
+    reducer: min
+    required: false
+  collision_risk_under_prediction:
+    source: awpg_offline_metrics
+    reducer: max
+    required: false
+  planner_ttc_with_prediction:
+    source: awpg_offline_metrics
+    reducer: min
+    required: false
+
+report:
+  plots:
+    - predicted_paths
+    - ade_fde
+    - prediction_risk

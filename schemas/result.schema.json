@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autoware-playground.local/schemas/result.schema.json",
+  "title": "RunRecord",
+  "type": "object",
+  "required": [
+    "api_version",
+    "kind",
+    "run_id",
+    "experiment",
+    "benchmark",
+    "mode",
+    "git",
+    "runtime",
+    "assets",
+    "metrics",
+    "failures",
+    "artifacts",
+    "reproduce"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "apg/v0"
+    },
+    "kind": {
+      "const": "RunRecord"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "experiment": {
+      "type": "string"
+    },
+    "benchmark": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "baseline",
+        "shadow",
+        "takeover",
+        "offline_replay"
+      ]
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "execution": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not_executed",
+            "completed",
+            "failed"
+          ]
+        },
+        "dry_run": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "reproduce": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autoware-playground.local/schemas/experiment.schema.json",
+  "title": "ExperimentManifest",
+  "type": "object",
+  "required": [
+    "api_version",
+    "kind",
+    "name",
+    "task",
+    "slot",
+    "mode",
+    "interfaces",
+    "benchmarks",
+    "reproducibility"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "apg/v0"
+    },
+    "kind": {
+      "const": "Experiment"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+    },
+    "task": {
+      "type": "string",
+      "enum": [
+        "planning",
+        "localization",
+        "perception",
+        "prediction",
+        "failure_analysis"
+      ]
+    },
+    "slot": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+$"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "baseline",
+        "shadow",
+        "takeover",
+        "offline_replay"
+      ]
+    },
+    "paper": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "venue": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "year": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1900
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "autoware": {
+      "type": "object",
+      "properties": {
+        "tested_with": {
+          "type": "object",
+          "properties": {
+            "autoware_lock": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "autoware_lock"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "interfaces": {
+      "type": "object",
+      "required": [
+        "inputs",
+        "outputs"
+      ],
+      "properties": {
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/topic_contract"
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/topic_contract"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "launch": {
+      "type": "object",
+      "properties": {
+        "package": {
+          "type": "string"
+        },
+        "file": {
+          "type": "string"
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reason_not_needed": {
+          "type": "string"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "package",
+            "file"
+          ]
+        },
+        {
+          "required": [
+            "reason_not_needed"
+          ]
+        }
+      ],
+      "additionalProperties": true
+    },
+    "benchmarks": {
+      "type": "object",
+      "required": [
+        "smoke"
+      ],
+      "properties": {
+        "smoke": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "recommended": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "reproducibility": {
+      "type": "object",
+      "required": [
+        "random_seed",
+        "deterministic"
+      ],
+      "properties": {
+        "random_seed": {
+          "type": "integer"
+        },
+        "deterministic": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "topic_contract": {
+      "type": "object",
+      "required": [
+        "topic",
+        "type"
+      ],
+      "properties": {
+        "topic": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "type": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_]+/[A-Za-z0-9_]+/[A-Za-z0-9_]+$"
+        },
+        "required": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

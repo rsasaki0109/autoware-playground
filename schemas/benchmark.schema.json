@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autoware-playground.local/schemas/benchmark.schema.json",
+  "title": "BenchmarkManifest",
+  "type": "object",
+  "required": [
+    "api_version",
+    "kind",
+    "name",
+    "task",
+    "runner",
+    "assets",
+    "metrics",
+    "gates",
+    "failure_taxonomy"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "apg/v0"
+    },
+    "kind": {
+      "const": "Benchmark"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+    },
+    "task": {
+      "type": "string",
+      "enum": [
+        "planning",
+        "localization",
+        "perception",
+        "prediction"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "runner": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "scenario_simulator_v2",
+            "rosbag_replay",
+            "planning_simulator",
+            "awsim"
+          ]
+        },
+        "headless": {
+          "type": "boolean"
+        },
+        "timeout_sec": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "scenario": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rosbag": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "assets": {
+      "type": "object",
+      "properties": {
+        "map": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scenario": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rosbag": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "autoware": {
+      "type": "object",
+      "properties": {
+        "launch": {
+          "type": "object",
+          "required": [
+            "package",
+            "file"
+          ],
+          "properties": {
+            "package": {
+              "type": "string"
+            },
+            "file": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "vehicle_model": {
+          "type": "string"
+        },
+        "sensor_model": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "config"
+      ],
+      "properties": {
+        "config": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "gates": {
+      "type": "object",
+      "required": [
+        "required"
+      ],
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/gate"
+          }
+        },
+        "diagnostic": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/gate"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "failure_taxonomy": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "gate": {
+      "type": "object",
+      "required": [
+        "name",
+        "op",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "op": {
+          "type": "string",
+          "enum": [
+            "==",
+            "!=",
+            ">",
+            ">=",
+            "<",
+            "<="
+          ]
+        },
+        "value": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

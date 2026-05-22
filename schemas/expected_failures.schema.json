@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autoware-playground.local/schemas/expected_failures.schema.json",
+  "title": "ExpectedFailures",
+  "type": "object",
+  "required": [
+    "api_version",
+    "kind",
+    "expected_failures"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "apg/v0"
+    },
+    "kind": {
+      "const": "ExpectedFailures"
+    },
+    "expected_failures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "tag",
+          "reason"
+        ],
+        "properties": {
+          "tag": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

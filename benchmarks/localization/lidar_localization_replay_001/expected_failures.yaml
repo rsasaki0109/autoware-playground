@@ -1,0 +1,8 @@
+api_version: apg/v0
+kind: ExpectedFailures
+
+expected_failures:
+  - tag: localization_lost
+    reason: Toy localizers may not converge on sparse or placeholder pointcloud data.
+  - tag: sim_invalid
+    reason: Replay data is a manifest placeholder until real assets are attached.
