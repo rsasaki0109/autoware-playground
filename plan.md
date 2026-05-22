@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-22 after the sixth MVP implementation pass (first real (non-dry-run) execution path: `rosbag_replay.execute()` actually spawns `ros2 bag play`, `run_real` writes a real `RunRecord` with `baseline_status: real`, and a `make_sample_rosbag.py` helper makes the path reproducible locally).
+Updated on 2026-05-22 after the seventh MVP implementation pass (CI now runs the real (non-dry-run) rosbag_replay path end-to-end on GitHub Actions: `ros-tooling/setup-ros@v0.7` installs ROS 2 jazzy, a synthetic bag is generated, `apg run` writes a real RunRecord, and the workflow asserts `execution.baseline_status == "real"` before uploading the artifact).
 
 The repository now has the benchmark-first dry-run scaffold in place, with
 stricter schemas, failure-tag cross-validation, README structure checks,
@@ -1407,7 +1407,7 @@ Added or confirmed:
 - tests under `tests/`
 - CI workflows:
   - `.github/workflows/lint.yaml` (validate + `apg lint --allow-dry-run-baselines` gate + pytest, plus informational strict-lint job that surfaces dry-run baselines via `continue-on-error`)
-  - `.github/workflows/smoke.yaml` (4-task dry-run matrix per benchmark/experiment with per-task report artifact, plus a `compare` job that diffs planning baseline vs experiment via `apg compare --json`)
+  - `.github/workflows/smoke.yaml` (4-task dry-run matrix + `compare` job + `real-rosbag-replay` job that installs ROS 2 jazzy via `ros-tooling/setup-ros@v0.7`, generates a synthetic bag with `tools/scripts/make_sample_rosbag.py`, runs `apg run` without `--dry-run`, asserts the resulting RunRecord is real and `play_returncode==0`, and uploads the run as an artifact)
   - `.github/workflows/benchmark-nightly.yaml`
 - placeholder docker/devcontainer/repository/docs/report files:
   - `.devcontainer/devcontainer.json`
@@ -1603,6 +1603,17 @@ Resume from here:
      localization / prediction) with per-task report artifact upload
    - `smoke.yaml` adds a `compare` job that dry-runs the planning baseline
      and experiment side-by-side and uploads `apg compare --json` output
+10. Run real benchmark in CI: **DONE in seventh pass (rosbag_replay only).**
+    - `smoke.yaml` adds a `real-rosbag-replay` job that installs ROS 2
+      jazzy via `ros-tooling/setup-ros@v0.7`, generates a synthetic
+      rosbag with `tools/scripts/make_sample_rosbag.py`, runs
+      `apg run` without `--dry-run`, asserts the resulting RunRecord is
+      real (`execution.baseline_status == "real"`, `dry_run == False`,
+      `play_returncode == 0`, expected message count), and uploads the
+      run as an artifact
+    - this is the first GitHub Actions job that actually exercises a
+      ROS 2 binary; scenario_simulator_v2 remains TODO and will require
+      a Docker image with a pinned Autoware workspace
 
 ## 28. Implementation Notes For Next Session
 

@@ -82,3 +82,56 @@ jobs:
         with:
           name: apg-smoke-compare
           path: compare.json
+
+  real-rosbag-replay:
+    # First REAL (non-dry-run) benchmark job: actually invokes
+    # `ros2 bag play` on a synthetic bag and writes a real RunRecord.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: jazzy
+      - name: Install apg
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          python3 -m pip install --user --break-system-packages --upgrade pip
+          python3 -m pip install --user --break-system-packages -e tools/apg
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Generate synthetic rosbag
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          mkdir -p /tmp/apg_data/rosbags
+          python3 tools/scripts/make_sample_rosbag.py \
+            /tmp/apg_data/rosbags/sample_lidar_localization_bag
+      - name: Run real rosbag_replay benchmark
+        shell: bash
+        env:
+          APG_DATA: /tmp/apg_data
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          apg run benchmarks/localization/lidar_localization_replay_001 \
+            --experiment experiments/localization/ndt_baseline \
+            --headless
+      - name: Verify RunRecord is real
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          apg validate runs/latest/result.json
+          python3 - <<'PY'
+          import json, sys
+          d = json.load(open("runs/latest/result.json"))
+          assert d["execution"]["baseline_status"] == "real", d["execution"]
+          assert d["execution"]["dry_run"] is False, d["execution"]
+          assert d["execution"]["status"] == "completed", d["execution"]
+          assert d["metrics"]["play_returncode"] == 0, d["metrics"]
+          assert d["metrics"]["rosbag_message_count"] == 10, d["metrics"]
+          print("real RunRecord verified:", d["run_id"])
+          PY
+      - name: Upload real RunRecord
+        uses: actions/upload-artifact@v4
+        with:
+          name: apg-real-rosbag-replay
+          path: runs/latest/
