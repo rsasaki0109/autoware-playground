@@ -6,8 +6,9 @@ import sys
 from pathlib import Path
 
 from .compare import compare_run_records, format_compare_text
+from .preflight import format_preflight_text, preflight_for_runner
 from .report import write_report
-from .run import ApgRunError, run_demo, run_dry_run
+from .run import ApgRunError, run_demo, run_dry_run, run_real
 from .schema import (
     find_repo_root,
     iter_benchmark_manifests,
@@ -91,23 +92,50 @@ def cmd_list(args: argparse.Namespace) -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    if not args.dry_run:
-        print("error: MVP runner only supports --dry-run", file=sys.stderr)
-        return 2
     try:
-        result_path = run_dry_run(
-            Path(args.benchmark),
-            Path(args.experiment),
-            output_root=Path(args.output) if args.output else None,
-            headless=args.headless,
-            seed=args.seed,
-            report=args.report,
-        )
+        if args.dry_run:
+            result_path = run_dry_run(
+                Path(args.benchmark),
+                Path(args.experiment),
+                output_root=Path(args.output) if args.output else None,
+                headless=args.headless,
+                seed=args.seed,
+                report=args.report,
+            )
+        else:
+            result_path = run_real(
+                Path(args.benchmark),
+                Path(args.experiment),
+                output_root=Path(args.output) if args.output else None,
+                headless=args.headless,
+                seed=args.seed,
+                report=args.report,
+            )
     except (ApgRunError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     print(result_path)
     return 0
+
+
+def cmd_preflight(args: argparse.Namespace) -> int:
+    root = find_repo_root(Path.cwd())
+    if args.benchmark:
+        manifest_path = Path(args.benchmark)
+        if manifest_path.is_dir():
+            manifest_path = manifest_path / "benchmark.yaml"
+        runner_type = (load_document(manifest_path).get("runner") or {}).get("type")
+    else:
+        runner_type = args.runner
+    if not runner_type:
+        print("error: pass --runner or a benchmark to infer the runner type", file=sys.stderr)
+        return 2
+    report = preflight_for_runner(runner_type, root=root)
+    if args.json:
+        print(json.dumps(report.to_dict(), sort_keys=True, indent=2))
+    else:
+        print(format_preflight_text(report), end="")
+    return 0 if report.ok else 1
 
 
 def cmd_report(args: argparse.Namespace) -> int:
@@ -203,6 +231,15 @@ def build_parser() -> argparse.ArgumentParser:
     demo.add_argument("--seed", type=int)
     demo.add_argument("--report", action="store_true")
     demo.set_defaults(func=cmd_demo)
+
+    preflight = subparsers.add_parser(
+        "preflight",
+        help="Check the local environment for a runner before non-dry-run execution.",
+    )
+    preflight.add_argument("benchmark", nargs="?", help="Benchmark dir or benchmark.yaml")
+    preflight.add_argument("--runner", help="Runner type (overrides benchmark.runner.type)")
+    preflight.add_argument("--json", action="store_true")
+    preflight.set_defaults(func=cmd_preflight)
 
     return parser
 

@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-22 after the third MVP implementation pass (runner dispatch + baseline policy).
+Updated on 2026-05-22 after the fourth MVP implementation pass (preflight + runner.execute scaffold for the dry-run-to-real boundary).
 
 The repository now has the benchmark-first dry-run scaffold in place, with
 stricter schemas, failure-tag cross-validation, README structure checks,
@@ -1392,9 +1392,11 @@ Added or confirmed:
 - minimal CLI package under `tools/apg`
 - runner dispatch package `tools/apg/apg/runners/`:
   - `base.py` (RunnerOutcome + ApgRunnerError)
-  - `scenario_simulator_v2.py` (dry-run dispatch)
-  - `rosbag_replay.py` (dry-run dispatch)
-  - `__init__.py` (`runner_dry_run` switch, `runner_execute` placeholder)
+  - `scenario_simulator_v2.py` (dry-run dispatch + execute stub)
+  - `rosbag_replay.py` (dry-run dispatch + execute stub)
+  - `__init__.py` (`runner_dry_run` + `runner_execute` switches)
+- preflight module `tools/apg/apg/preflight.py` (ROS_DISTRO / ros2 /
+  Autoware workspace / runner-specific binaries)
 - static report generation from `RunRecord`
 - tests under `tests/`
 - CI workflows:
@@ -1423,6 +1425,8 @@ apg run <benchmark> --experiment <experiment> --dry-run [--report]
 apg report <result.json>
 apg compare <left_run_dir> <right_run_dir> [--json]
 apg demo lane_change_cut_in --dry-run --headless --report
+apg preflight <benchmark> [--runner <type>] [--json]
+apg run <benchmark> --experiment <experiment>           # non-dry-run, preflight first
 ```
 
 Current dry-run behavior:
@@ -1454,6 +1458,11 @@ Current dry-run behavior:
 - dispatches to a runner-specific dry-run handler based on
   `benchmark.runner.type` and records the chosen backend under
   `runtime.runner` + `runtime.runner_hints` in the RunRecord
+- `apg run` without `--dry-run` runs `preflight_for_runner(...)` first
+  and fails loudly with an actionable error when the environment is
+  missing required pieces (no Autoware workspace, no scenario runner,
+  etc.); `runner_execute` deliberately raises `ApgRunnerError` with
+  next-step instructions until real execution is wired
 - uses `failures: ["sim_invalid"]` for placeholder non-executed runs
 
 Important limitation:
@@ -1475,17 +1484,21 @@ rtk proxy .venv/bin/apg compare runs/<left> runs/<right>
 rtk proxy .venv/bin/apg validate runs/latest/result.json
 ```
 
-Observed verification result (after third pass):
+Observed verification result (after fourth pass):
 
 ```text
-22 passed
+23 passed
 apg validate . → validated 37 schema-backed file(s) (4 dry_run baseline warnings)
 apg lint .     → validation failed: 4 issue(s) (the 4 dry_run baseline warnings)
+apg preflight benchmarks/planning/lane_change_cut_in_001 → fails on
+  this machine because AUTOWARE_WORKSPACE is unset and
+  scenario_test_runner is not on PATH (expected — no Autoware here yet)
+apg run (no --dry-run) → exits 1 with "preflight failed for runner
+  'scenario_simulator_v2': autoware_workspace(...), scenario_test_runner(...)"
 apg demo lane_change_cut_in writes 2 dry-run RunRecords (baseline + safe_gap_ttc_planner)
 apg compare reports benchmark_match=True with no diffs for two dry-run records
 runs/latest/failure_cards/sim_invalid.yaml is generated and validates as FailureCard
-runs/<id>/result.json now includes runtime.runner_hints (backend, headless, scenario/rosbag, …)
-runs/<id>/result.json now includes execution.baseline_status = "dry_run"
+runs/<id>/result.json now includes runtime.runner_hints + execution.baseline_status
 ```
 
 Note:
@@ -1520,11 +1533,17 @@ Resume from here:
      chosen backend under `runtime.runner_hints`
    - unknown runner types fail loudly with `ApgRunnerError`
    - no universal simulator abstraction was introduced
-5. Connect first real smoke path:
-   - start with one planning dry-run-to-real transition
-   - launch pinned Autoware baseline through existing Autoware launch files
-   - launch Scenario Simulator v2 only when assets and environment are explicitly present
-   - write real `result.json` only after actual execution
+5. Connect first real smoke path: **partial in fourth pass — boundary in, real execution still TODO.**
+   - `apg preflight` checks ROS_DISTRO, `ros2`, `AUTOWARE_WORKSPACE`,
+     and the runner-specific binary (e.g. `scenario_test_runner`)
+   - `apg run` without `--dry-run` routes through `run_real(...)` which
+     runs preflight, then calls `runner_execute(runner_type, ...)`
+   - both `scenario_simulator_v2.execute(...)` and
+     `rosbag_replay.execute(...)` currently raise `ApgRunnerError` with
+     a precise description of what still needs to be wired
+   - still TODO: launch pinned Autoware through existing launch files,
+     spawn `scenario_test_runner` / `ros2 bag play`, collect metrics,
+     and write a real (non-dry-run) `result.json`
 6. Add baseline result policy: **DONE in third pass.**
    - `execution.baseline_status` field added to RunRecord schema
      (`dry_run` / `real` / `unknown`)

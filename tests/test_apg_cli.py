@@ -12,9 +12,10 @@ sys.path.insert(0, str(ROOT / "tools" / "apg"))
 
 from apg.cli import main
 from apg.compare import compare_run_records
+from apg.preflight import preflight_for_runner
 from apg.report import write_report
-from apg.run import run_demo, run_dry_run
-from apg.runners import ApgRunnerError, runner_dry_run
+from apg.run import ApgRunError, run_demo, run_dry_run, run_real
+from apg.runners import ApgRunnerError, runner_dry_run, runner_execute
 from apg.schema import (
     find_repo_root,
     load_failure_taxonomy,
@@ -310,6 +311,78 @@ def test_baseline_results_carry_baseline_status():
     for baseline in sorted((ROOT / "benchmarks").glob("*/*/baselines/*/result.json")):
         document = json.loads(baseline.read_text(encoding="utf-8"))
         assert document["execution"]["baseline_status"] in {"dry_run", "real", "unknown"}, baseline
+
+
+def test_preflight_reports_missing_environment(monkeypatch):
+    monkeypatch.delenv("ROS_DISTRO", raising=False)
+    monkeypatch.delenv("AUTOWARE_WORKSPACE", raising=False)
+    report = preflight_for_runner("scenario_simulator_v2", root=ROOT)
+    assert report.ok is False
+    names = {check.name for check in report.checks}
+    assert {"ROS_DISTRO", "ros2", "autoware_workspace", "scenario_test_runner"}.issubset(names)
+
+
+def test_runner_execute_raises_for_unconnected_runner():
+    import pytest
+
+    with pytest.raises(ApgRunnerError, match="not connected yet"):
+        runner_execute(
+            "scenario_simulator_v2",
+            benchmark={"runner": {"type": "scenario_simulator_v2"}},
+            experiment={"mode": "shadow"},
+            headless=True,
+            seed=None,
+        )
+    with pytest.raises(ApgRunnerError, match="not connected yet"):
+        runner_execute(
+            "rosbag_replay",
+            benchmark={"runner": {"type": "rosbag_replay"}},
+            experiment={"mode": "offline_replay"},
+            headless=True,
+            seed=None,
+        )
+
+
+def test_run_real_fails_preflight(monkeypatch):
+    import pytest
+
+    monkeypatch.delenv("ROS_DISTRO", raising=False)
+    monkeypatch.delenv("AUTOWARE_WORKSPACE", raising=False)
+    with pytest.raises(ApgRunError, match="preflight failed"):
+        run_real(
+            ROOT / "benchmarks" / "planning" / "lane_change_cut_in_001",
+            ROOT / "experiments" / "planning" / "autoware_baseline",
+        )
+
+
+def test_apg_run_without_dry_run_uses_real_path(monkeypatch, capsys):
+    monkeypatch.chdir(ROOT)
+    monkeypatch.delenv("ROS_DISTRO", raising=False)
+    monkeypatch.delenv("AUTOWARE_WORKSPACE", raising=False)
+    rc = main([
+        "run",
+        "benchmarks/planning/lane_change_cut_in_001",
+        "--experiment",
+        "experiments/planning/autoware_baseline",
+    ])
+    err = capsys.readouterr().err
+    assert rc == 1
+    assert "preflight failed" in err
+
+
+def test_apg_preflight_cli(monkeypatch, capsys):
+    monkeypatch.chdir(ROOT)
+    monkeypatch.delenv("ROS_DISTRO", raising=False)
+    monkeypatch.delenv("AUTOWARE_WORKSPACE", raising=False)
+    rc = main([
+        "preflight",
+        "benchmarks/planning/lane_change_cut_in_001",
+        "--json",
+    ])
+    assert rc == 1
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["runner"] == "scenario_simulator_v2"
+    assert payload["ok"] is False
 
 
 def test_failure_card_schema_validates(tmp_path):

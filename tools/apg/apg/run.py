@@ -9,8 +9,9 @@ from typing import Any, Iterable
 
 import yaml
 
+from .preflight import preflight_for_runner
 from .report import write_report
-from .runners import ApgRunnerError, runner_dry_run
+from .runners import ApgRunnerError, runner_dry_run, runner_execute
 from .schema import find_repo_root, load_document, validate_path
 
 
@@ -233,6 +234,58 @@ def run_dry_run(
         write_report(result_path)
     _copy_latest(result_path, report=report, failure_cards=failure_card_paths)
     return result_path
+
+
+def run_real(
+    benchmark_path: Path,
+    experiment_path: Path,
+    *,
+    output_root: Path | None = None,
+    headless: bool = False,
+    seed: int | None = None,
+    report: bool = False,
+) -> Path:
+    root = find_repo_root(benchmark_path)
+    benchmark_manifest_path, benchmark_dir = _resolve_manifest_path(
+        benchmark_path.resolve(), "benchmark.yaml"
+    )
+    experiment_manifest_path, experiment_dir = _resolve_manifest_path(
+        experiment_path.resolve(), "experiment.yaml"
+    )
+    benchmark = load_document(benchmark_manifest_path)
+    experiment = load_document(experiment_manifest_path)
+    runner_type = (benchmark.get("runner") or {}).get("type")
+    if not runner_type:
+        raise ApgRunError(f"{benchmark_manifest_path}: runner.type is required")
+
+    report_obj = preflight_for_runner(runner_type, root=root)
+    if not report_obj.ok:
+        failed = ", ".join(
+            f"{check.name}({check.detail})" for check in report_obj.checks if not check.ok
+        )
+        raise ApgRunError(
+            f"preflight failed for runner {runner_type!r}: {failed}."
+            f" Run `apg preflight {benchmark_dir.relative_to(root)}` for details."
+        )
+
+    try:
+        runner_execute(
+            runner_type,
+            benchmark=benchmark,
+            experiment=experiment,
+            headless=headless,
+            seed=seed,
+        )
+    except ApgRunnerError as exc:
+        raise ApgRunError(str(exc)) from exc
+
+    # Real execution returned an outcome (future work), but writing the
+    # resulting RunRecord is not implemented yet — runner_execute always
+    # raises today.
+    _ = (output_root, report, run_real)
+    raise ApgRunError(
+        "real RunRecord writer is not implemented yet — see plan.md §27 item 5"
+    )
 
 
 def run_demo(

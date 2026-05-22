@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .base import RunnerOutcome
+from .base import ApgRunnerError, RunnerOutcome
 
 
 def dry_run(
@@ -39,4 +39,19 @@ def dry_run(
         metrics=metrics,
         failures=failures,
         runtime_hints=runtime_hints,
+    )
+
+
+def execute(
+    *,
+    benchmark: dict[str, Any],
+    experiment: dict[str, Any],
+    headless: bool,
+    seed: int | None,
+) -> RunnerOutcome:
+    raise ApgRunnerError(
+        "rosbag_replay real execution is not connected yet."
+        " Required next steps: locate the rosbag from benchmark.assets.rosbag,"
+        " spawn `ros2 bag play` alongside the pinned Autoware stack, then"
+        " collect metrics into a real RunRecord. See plan.md §27 item 5."
     )
