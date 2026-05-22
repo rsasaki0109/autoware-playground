@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-23 after the tenth MVP implementation pass (CI real-rosbag-replay matrix expanded from 2 → 3 entries: `localization-ndt`, `localization-icp`, `perception-cluster`. Localization is now the first benchmark in the repo for which **two** different experiments have real RunRecords produced by CI — the precondition for a real leaderboard row).
+Updated on 2026-05-23 after the eleventh MVP implementation pass (first `apg leaderboard` prototype: aggregates committed baselines and local `runs/*/result.json` records into a benchmark × experiment metric table. Localization already shows two real RunRecords (`ndt_baseline` baseline + `icp_registration_toy` from runs); `text` / `markdown` / `json` output formats supported).
 
 The remaining stretch goal toward a leaderboard:
 
@@ -1435,6 +1435,9 @@ apg validate .                # warnings stay non-fatal
 apg validate . --json         # machine-readable validation output
 apg lint .                    # strict alias: warnings become errors
 apg lint . --allow-dry-run-baselines  # CI gate: ignore dry_run baseline warning
+apg leaderboard               # benchmark x experiment table (text)
+apg leaderboard --format markdown
+apg leaderboard --format json
 apg list benchmarks
 apg list experiments
 apg run <benchmark> --experiment <experiment> --dry-run [--report]
@@ -1509,18 +1512,18 @@ rtk proxy .venv/bin/apg compare runs/<left> runs/<right>
 rtk proxy .venv/bin/apg validate runs/latest/result.json
 ```
 
-Observed verification result (after ninth pass):
+Observed verification result (after eleventh pass):
 
 ```text
-29 passed (incl. e2e: synthetic bag generated + ros2 bag play in test)
+33 passed (incl. leaderboard dataclass + 3 output formats)
 apg validate . → validated 32 schema-backed file(s) (2 dry_run baseline warnings)
-apg lint .     → validation failed: 2 issue(s) (the 2 remaining dry_run baselines: planning + prediction, both scenario_simulator_v2)
+apg lint .     → validation failed: 2 issue(s) (planning + prediction, both scenario_simulator_v2)
 apg lint . --allow-dry-run-baselines → exit 0
-CI smoke real-rosbag-replay matrix (run 26288087864) → ✓ both jobs
-  (localization in 2m54s, perception in 2m56s); the two RunRecords are
-  now committed as baselines under
-  benchmarks/localization/.../baselines/ndt_baseline/result.json and
-  benchmarks/perception/.../baselines/lidar_cluster_baseline/result.json
+CI smoke real-rosbag-replay matrix (run 26307585516) → ✓ all 3 jobs
+  (localization-ndt 2m52s, localization-icp 2m55s, perception-cluster 3m57s)
+apg leaderboard (text) shows real RunRecords for ndt_baseline (baseline),
+  icp_registration_toy (runs), lidar_cluster_baseline (baseline);
+  planning + prediction rows still dry_run/missing
 apg preflight benchmarks/planning/lane_change_cut_in_001 → fails on
   this machine because AUTOWARE_WORKSPACE is unset and
   scenario_test_runner is not on PATH (expected — no Autoware here yet)
@@ -1618,7 +1621,7 @@ Resume from here:
    - `smoke.yaml` adds a `compare` job that dry-runs the planning baseline
      and experiment side-by-side and uploads `apg compare --json` output
 10. Run real benchmark in CI and commit real baselines:
-    **DONE in seventh + eighth + ninth passes (rosbag_replay only).**
+    **DONE in seventh + eighth + ninth + tenth passes (rosbag_replay only).**
     - eighth pass: the RunRecord produced by the CI real-rosbag-replay
       job is now committed as the localization/ndt_baseline baseline,
       replacing the dry-run stub. The strict-lint dry-run baseline
@@ -1641,6 +1644,26 @@ Resume from here:
     - this is the first GitHub Actions job that actually exercises a
       ROS 2 binary; scenario_simulator_v2 remains TODO and will require
       a Docker image with a pinned Autoware workspace
+    - tenth pass: the matrix is expanded once more to add
+      `localization-icp` (experiments/localization/icp_registration_toy),
+      so the localization benchmark is now exercised against **two**
+      different experiments with real `ros2 bag play` in CI. This is
+      the precondition for a real leaderboard row that compares two
+      methods against the same benchmark.
+11. Leaderboard: **prototype DONE in eleventh pass.**
+    - `tools/apg/apg/leaderboard.py` builds a `Leaderboard` from
+      `benchmarks/*/*/baselines/*/result.json` plus
+      `runs/*/result.json` (skipping dry-run RunRecords from `runs/`)
+    - row = (benchmark, experiment); column union = each benchmark's
+      `gates.required` + `gates.diagnostic` metric names, plus any
+      metric keys actually present in the entries
+    - `apg leaderboard --format {text,markdown,json}` emits the
+      aggregate; tests cover dataclass + the three output formats
+    - still TODO: wire `apg leaderboard` into CI so the aggregated
+      table (including all RunRecords produced by the `real-rosbag-replay`
+      matrix on the current push) is uploaded per push; once that
+      is in, surface it via a static report or by committing it back
+      to `reports/leaderboard.md`
 
 ## 28. Implementation Notes For Next Session
 

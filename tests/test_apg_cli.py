@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT / "tools" / "apg"))
 
 from apg.cli import main
 from apg.compare import compare_run_records
+from apg.leaderboard import build_leaderboard, emit_leaderboard
 from apg.preflight import preflight_for_runner
 from apg.report import write_report
 from apg.run import ApgRunError, run_demo, run_dry_run, run_real
@@ -506,6 +507,50 @@ def test_apg_preflight_cli(monkeypatch, capsys):
     payload = json.loads(capsys.readouterr().out)
     assert payload["runner"] == "scenario_simulator_v2"
     assert payload["ok"] is False
+
+
+def test_leaderboard_picks_baseline_and_runs(tmp_path):
+    board = build_leaderboard(ROOT)
+    by_key = {(e.benchmark, e.experiment): e for e in board.entries}
+    # localization/ndt_baseline is a committed real baseline
+    ndt = by_key[("lidar_localization_replay_001", "ndt_baseline")]
+    assert ndt.source == "baseline"
+    assert ndt.baseline_status == "real"
+    assert ndt.status == "completed"
+    # planning/autoware_baseline is still a dry-run baseline
+    autoware = by_key[("lane_change_cut_in_001", "autoware_baseline")]
+    assert autoware.source == "baseline"
+    assert autoware.baseline_status == "dry_run"
+    # safe_gap_ttc_planner has no committed baseline; row should be missing
+    safe = by_key[("lane_change_cut_in_001", "safe_gap_ttc_planner")]
+    assert safe.source == "missing"
+    # column union includes a localization gate
+    assert "pose_output_available" in board.columns
+
+
+def test_leaderboard_markdown_has_header(monkeypatch, capsys):
+    monkeypatch.chdir(ROOT)
+    assert main(["leaderboard", "--format", "markdown"]) == 0
+    out = capsys.readouterr().out
+    assert out.startswith("| benchmark | experiment |")
+    assert "lidar_localization_replay_001" in out
+    assert "ndt_baseline" in out
+
+
+def test_leaderboard_json_is_parseable(monkeypatch, capsys):
+    monkeypatch.chdir(ROOT)
+    assert main(["leaderboard", "--format", "json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert isinstance(payload, dict)
+    assert "columns" in payload
+    assert "entries" in payload
+    assert len(payload["entries"]) >= 4
+
+
+def test_leaderboard_emit_helper(tmp_path):
+    text = emit_leaderboard(ROOT, fmt="text")
+    assert "lidar_localization_replay_001" in text
+    assert "ndt_baseline" in text
 
 
 def test_failure_card_schema_validates(tmp_path):

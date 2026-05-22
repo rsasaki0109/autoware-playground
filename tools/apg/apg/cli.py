@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from .compare import compare_run_records, format_compare_text
+from .leaderboard import emit_leaderboard
 from .preflight import format_preflight_text, preflight_for_runner
 from .report import write_report
 from .run import ApgRunError, run_demo, run_dry_run, run_real
@@ -149,6 +150,13 @@ def cmd_preflight(args: argparse.Namespace) -> int:
     return 0 if report.ok else 1
 
 
+def cmd_leaderboard(args: argparse.Namespace) -> int:
+    root = find_repo_root(Path.cwd())
+    output = emit_leaderboard(root, fmt=args.format)
+    print(output, end="")
+    return 0
+
+
 def cmd_report(args: argparse.Namespace) -> int:
     try:
         report_path = write_report(Path(args.result), Path(args.output) if args.output else None)
@@ -250,6 +258,18 @@ def build_parser() -> argparse.ArgumentParser:
     demo.add_argument("--seed", type=int)
     demo.add_argument("--report", action="store_true")
     demo.set_defaults(func=cmd_demo)
+
+    leaderboard = subparsers.add_parser(
+        "leaderboard",
+        help="Aggregate baselines and run records into a benchmark x experiment table.",
+    )
+    leaderboard.add_argument(
+        "--format",
+        choices=["text", "markdown", "json"],
+        default="text",
+        help="Output format (default: text).",
+    )
+    leaderboard.set_defaults(func=cmd_leaderboard)
 
     preflight = subparsers.add_parser(
         "preflight",
