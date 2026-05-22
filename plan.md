@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-23 after the twelfth MVP implementation pass (CI now publishes a leaderboard: a new `leaderboard` job in `smoke.yaml` waits for the entire `real-rosbag-replay` matrix, downloads every per-task RunRecord, stages them into `runs/`, runs `apg leaderboard` in all three formats, and uploads the resulting table as an `apg-leaderboard` artifact).
+Updated on 2026-05-23 after the thirteenth MVP implementation pass (leaderboard now lives in the repo: the CI `leaderboard` job auto-commits the generated markdown back to `reports/leaderboard.md` on every push to `main`, with `[skip ci]` to avoid loops. The README links to it directly).
 
 The remaining stretch goal toward a leaderboard:
 
@@ -1665,9 +1665,14 @@ Resume from here:
       runs `apg leaderboard` in all three formats, and uploads the
       result as an `apg-leaderboard` artifact (containing
       `leaderboard.md`, `leaderboard.json`, `leaderboard.txt`)
-    - still TODO: surface the leaderboard outside of CI artifacts
-      (e.g. commit a generated `reports/leaderboard.md` on `main`,
-      or render an HTML page from the JSON)
+    - thirteenth pass: on main push, the `leaderboard` job
+      additionally writes the markdown table to
+      `reports/leaderboard.md` (wrapped with a short auto-generated
+      preamble pointing back at the source CI run), commits it as
+      `github-actions[bot]`, and pushes with `[skip ci]` so the
+      auto-commit does not retrigger smoke. README links to
+      `reports/leaderboard.md` so the leaderboard is now the first
+      thing a visitor can click through to.
 
 ## 28. Implementation Notes For Next Session
 
