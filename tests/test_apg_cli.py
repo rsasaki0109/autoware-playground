@@ -14,6 +14,7 @@ from apg.cli import main
 from apg.compare import compare_run_records
 from apg.report import write_report
 from apg.run import run_demo, run_dry_run
+from apg.runners import ApgRunnerError, runner_dry_run
 from apg.schema import (
     find_repo_root,
     load_failure_taxonomy,
@@ -55,7 +56,11 @@ def test_dry_run_writes_result_report_and_failure_card(tmp_path):
     result = json.loads(result_path.read_text(encoding="utf-8"))
     assert result["kind"] == "RunRecord"
     assert result["execution"]["dry_run"] is True
+    assert result["execution"]["baseline_status"] == "dry_run"
     assert result["execution"]["seed"] == 7
+    assert result["runtime"]["runner"] == "scenario_simulator_v2"
+    assert result["runtime"]["runner_hints"]["dispatched"] is True
+    assert result["runtime"]["runner_hints"]["backend"] == "scenario_simulator_v2"
     assert result["benchmark"] == "lane_change_cut_in_001"
     assert result["experiment"] == "safe_gap_ttc_planner"
     assert (result_path.parent / "report.html").is_file()
@@ -85,11 +90,14 @@ def test_report_command_accepts_run_directory(tmp_path):
     assert "APG Run Report" in report_path.read_text(encoding="utf-8")
 
 
-def test_lint_passes_in_repo(monkeypatch, capsys):
+def test_lint_flags_dry_run_baselines(monkeypatch, capsys):
     monkeypatch.chdir(ROOT)
-    assert main(["lint", "."]) == 0
-    out = capsys.readouterr().out
-    assert "validated" in out
+    # All four committed baselines are dry-run, so lint surfaces them as errors.
+    assert main(["lint", "."]) == 1
+    err = capsys.readouterr().err
+    assert "baseline_status='dry_run'" in err
+    # Exactly the four committed baselines should be flagged.
+    assert err.count("baseline_status='dry_run'") == 4
 
 
 def test_validate_json_output(monkeypatch, capsys):
@@ -247,6 +255,61 @@ def test_compare_cli_outputs_json(tmp_path, capsys):
     payload = json.loads(capsys.readouterr().out)
     assert payload["benchmark_match"] is True
     assert "metric_diffs" in payload
+
+
+def test_runner_dry_run_dispatches_rosbag_replay():
+    benchmark = {
+        "name": "rosbag_demo",
+        "task": "localization",
+        "runner": {"type": "rosbag_replay", "timeout_sec": 60},
+        "assets": {"rosbag": "assets/rosbag/demo/asset.yaml"},
+        "gates": {"required": [{"name": "ok", "op": "==", "value": True}]},
+    }
+    experiment = {"name": "ndt_baseline", "task": "localization", "mode": "offline_replay"}
+    outcome = runner_dry_run(
+        "rosbag_replay",
+        benchmark=benchmark,
+        experiment=experiment,
+        headless=True,
+        seed=None,
+    )
+    assert outcome.runner == "rosbag_replay"
+    assert outcome.runtime_hints["backend"] == "rosbag_replay"
+    assert outcome.runtime_hints["dispatched"] is True
+    assert outcome.runtime_hints["rosbag"] == "assets/rosbag/demo/asset.yaml"
+    assert outcome.metrics["dry_run"] is True
+    assert outcome.failures == ["sim_invalid"]
+
+
+def test_runner_dry_run_falls_back_for_planning_simulator():
+    outcome = runner_dry_run(
+        "planning_simulator",
+        benchmark={"runner": {"type": "planning_simulator"}, "gates": {"required": []}},
+        experiment={"mode": "shadow"},
+        headless=False,
+        seed=None,
+    )
+    assert outcome.runner == "planning_simulator"
+    assert outcome.runtime_hints["dispatched"] is False
+
+
+def test_runner_dry_run_rejects_unknown_runner():
+    import pytest
+
+    with pytest.raises(ApgRunnerError):
+        runner_dry_run(
+            "not_a_real_runner",
+            benchmark={"runner": {"type": "not_a_real_runner"}, "gates": {"required": []}},
+            experiment={"mode": "shadow"},
+            headless=False,
+            seed=None,
+        )
+
+
+def test_baseline_results_carry_baseline_status():
+    for baseline in sorted((ROOT / "benchmarks").glob("*/*/baselines/*/result.json")):
+        document = json.loads(baseline.read_text(encoding="utf-8"))
+        assert document["execution"]["baseline_status"] in {"dry_run", "real", "unknown"}, baseline
 
 
 def test_failure_card_schema_validates(tmp_path):

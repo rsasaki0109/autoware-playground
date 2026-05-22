@@ -30,7 +30,8 @@
   },
   "execution": {
     "status": "not_executed",
-    "dry_run": true
+    "dry_run": true,
+    "baseline_status": "dry_run"
   },
   "reproduce": "apg run benchmarks/planning/lane_change_cut_in_001 --experiment experiments/planning/autoware_baseline --dry-run"
 }

@@ -10,6 +10,7 @@ from typing import Any, Iterable
 import yaml
 
 from .report import write_report
+from .runners import ApgRunnerError, runner_dry_run
 from .schema import find_repo_root, load_document, validate_path
 
 
@@ -42,15 +43,6 @@ def _asset_hashes(root: Path, benchmark: dict[str, Any]) -> dict[str, str | None
         asset_manifest = load_document(manifest_path)
         hashes[f"{asset_name}_sha256"] = asset_manifest.get("integrity", {}).get("sha256")
     return hashes
-
-
-def _dry_run_metrics(benchmark: dict[str, Any]) -> dict[str, Any]:
-    metrics: dict[str, Any] = {"dry_run": True}
-    gates = benchmark.get("gates", {})
-    for group in ("required", "diagnostic"):
-        for gate in gates.get(group, []) or []:
-            metrics.setdefault(gate.get("name"), None)
-    return metrics
 
 
 def _copy_latest(result_path: Path, report: bool, failure_cards: list[Path]) -> None:
@@ -174,13 +166,26 @@ def run_dry_run(
     if report:
         command += " --report"
 
-    failures = ["sim_invalid"]
+    runner_type = (benchmark.get("runner") or {}).get("type")
+    if not runner_type:
+        raise ApgRunError(f"{benchmark_manifest_path}: runner.type is required")
+    try:
+        outcome = runner_dry_run(
+            runner_type,
+            benchmark=benchmark,
+            experiment=experiment,
+            headless=headless,
+            seed=seed,
+        )
+    except ApgRunnerError as exc:
+        raise ApgRunError(str(exc)) from exc
+
     failure_card_paths = _write_failure_cards(
         run_dir,
         benchmark_name=benchmark["name"],
         experiment_name=experiment["name"],
         run_id=run_id,
-        failures=failures,
+        failures=outcome.failures,
     )
     failure_card_rels = [
         path.relative_to(run_dir).as_posix() for path in failure_card_paths
@@ -201,11 +206,12 @@ def run_dry_run(
             "container_digest": None,
             "ros_distro": "not_executed",
             "headless": headless,
-            "runner": benchmark.get("runner", {}).get("type"),
+            "runner": outcome.runner,
+            "runner_hints": outcome.runtime_hints,
         },
         "assets": _asset_hashes(root, benchmark),
-        "metrics": _dry_run_metrics(benchmark),
-        "failures": failures,
+        "metrics": outcome.metrics,
+        "failures": outcome.failures,
         "artifacts": {
             "rosbag": None,
             "report": "report.html" if report else None,
@@ -215,6 +221,7 @@ def run_dry_run(
         "execution": {
             "status": "not_executed",
             "dry_run": True,
+            "baseline_status": "dry_run",
             "seed": seed if seed is not None else experiment.get("reproducibility", {}).get("random_seed"),
         },
         "reproduce": command,

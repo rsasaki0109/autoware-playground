@@ -246,6 +246,37 @@ def _check_benchmark_bundle(root: Path, manifest_path: Path) -> ValidationResult
                     )
 
     result.extend(_required_section_check(bdir / "README.md", BENCHMARK_README_SECTIONS))
+    result.extend(_check_baseline_results(bdir))
+    return result
+
+
+def _check_baseline_results(benchmark_dir: Path) -> ValidationResult:
+    result = ValidationResult()
+    baselines_dir = benchmark_dir / "baselines"
+    if not baselines_dir.is_dir():
+        return result
+    for baseline_result in sorted(baselines_dir.glob("*/result.json")):
+        try:
+            document = load_document(baseline_result)
+        except Exception:
+            continue
+        execution = (document or {}).get("execution") or {}
+        status = execution.get("baseline_status")
+        if status is None:
+            result.warnings.append(
+                f"{baseline_result}: execution.baseline_status missing"
+                " (set to 'dry_run', 'real', or 'unknown')"
+            )
+        elif status == "dry_run":
+            result.warnings.append(
+                f"{baseline_result}: baseline_status='dry_run' — replace with a real"
+                " execution once the runner is connected"
+            )
+        elif status not in {"real", "unknown"}:
+            result.errors.append(
+                f"{baseline_result}: execution.baseline_status {status!r} is not"
+                " one of dry_run / real / unknown"
+            )
     return result
 
 

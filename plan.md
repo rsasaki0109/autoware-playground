@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-22 after the second MVP implementation pass (validation tightening + CLI extensions).
+Updated on 2026-05-22 after the third MVP implementation pass (runner dispatch + baseline policy).
 
 The repository now has the benchmark-first dry-run scaffold in place, with
 stricter schemas, failure-tag cross-validation, README structure checks,
@@ -1390,6 +1390,11 @@ Added or confirmed:
   - `experiments/perception/lidar_cluster_baseline`
   - `experiments/prediction/constant_velocity_baseline`
 - minimal CLI package under `tools/apg`
+- runner dispatch package `tools/apg/apg/runners/`:
+  - `base.py` (RunnerOutcome + ApgRunnerError)
+  - `scenario_simulator_v2.py` (dry-run dispatch)
+  - `rosbag_replay.py` (dry-run dispatch)
+  - `__init__.py` (`runner_dry_run` switch, `runner_execute` placeholder)
 - static report generation from `RunRecord`
 - tests under `tests/`
 - CI workflows:
@@ -1443,6 +1448,12 @@ Current dry-run behavior:
 - optionally writes `report.html`
 - updates `runs/latest/` (including `failure_cards/`)
 - marks generated results as `execution.status: not_executed`
+- marks generated results as `execution.baseline_status: dry_run` and
+  warns (or errors under `apg lint`) when any baseline `result.json` is
+  still labelled `dry_run`
+- dispatches to a runner-specific dry-run handler based on
+  `benchmark.runner.type` and records the chosen backend under
+  `runtime.runner` + `runtime.runner_hints` in the RunRecord
 - uses `failures: ["sim_invalid"]` for placeholder non-executed runs
 
 Important limitation:
@@ -1464,15 +1475,17 @@ rtk proxy .venv/bin/apg compare runs/<left> runs/<right>
 rtk proxy .venv/bin/apg validate runs/latest/result.json
 ```
 
-Observed verification result (after second pass):
+Observed verification result (after third pass):
 
 ```text
-14 passed
-validated 33 schema-backed file(s)
-validated 1 schema-backed file(s) for runs/latest/result.json
+22 passed
+apg validate . → validated 37 schema-backed file(s) (4 dry_run baseline warnings)
+apg lint .     → validation failed: 4 issue(s) (the 4 dry_run baseline warnings)
 apg demo lane_change_cut_in writes 2 dry-run RunRecords (baseline + safe_gap_ttc_planner)
 apg compare reports benchmark_match=True with no diffs for two dry-run records
 runs/latest/failure_cards/sim_invalid.yaml is generated and validates as FailureCard
+runs/<id>/result.json now includes runtime.runner_hints (backend, headless, scenario/rosbag, …)
+runs/<id>/result.json now includes execution.baseline_status = "dry_run"
 ```
 
 Note:
@@ -1497,20 +1510,30 @@ Resume from here:
    - `apg demo lane_change_cut_in --dry-run --headless --report` added
    - `apg validate --json` / `apg lint --json` emit machine-readable output
    - `apg compare` reads two `RunRecord` files and reports diffs
-4. Add real runner boundaries without over-abstracting simulation:
-   - define a small runner dispatch for `scenario_simulator_v2`
-   - define a small runner dispatch for `rosbag_replay`
-   - keep the runner type explicit in benchmark manifests
-   - do not introduce a universal simulator abstraction
+4. Add real runner boundaries without over-abstracting simulation: **DONE in third pass.**
+   - dispatch for `scenario_simulator_v2` lives in
+     `tools/apg/apg/runners/scenario_simulator_v2.py`
+   - dispatch for `rosbag_replay` lives in
+     `tools/apg/apg/runners/rosbag_replay.py`
+   - `planning_simulator` and `awsim` keep a generic dry-run fallback
+   - `apg run --dry-run` calls `runner_dry_run(...)` and records the
+     chosen backend under `runtime.runner_hints`
+   - unknown runner types fail loudly with `ApgRunnerError`
+   - no universal simulator abstraction was introduced
 5. Connect first real smoke path:
    - start with one planning dry-run-to-real transition
    - launch pinned Autoware baseline through existing Autoware launch files
    - launch Scenario Simulator v2 only when assets and environment are explicitly present
    - write real `result.json` only after actual execution
-6. Add baseline result policy:
-   - keep committed baseline `result.json` files clearly marked when dry-run only
-   - add a `baseline_status` or equivalent field if needed
-   - replace dry-run baselines with real baselines only when reproducible locally and in CI
+6. Add baseline result policy: **DONE in third pass.**
+   - `execution.baseline_status` field added to RunRecord schema
+     (`dry_run` / `real` / `unknown`)
+   - all four committed baseline `result.json` files now carry
+     `baseline_status: dry_run`
+   - `apg lint` surfaces every `dry_run` baseline as an error so we
+     cannot accidentally treat dry-run baselines as real evidence
+   - replace dry-run baselines with real baselines only when
+     reproducible locally and in CI
 7. First failure-card flow: **DONE in second pass.**
    - `schemas/failure_card.schema.json` added
    - `apg run --dry-run` writes `failure_cards/<tag>.yaml` stubs for each
