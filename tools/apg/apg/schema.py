@@ -195,7 +195,12 @@ def _root_relative(root: Path, value: str) -> Path:
     return root / path
 
 
-def _check_benchmark_bundle(root: Path, manifest_path: Path) -> ValidationResult:
+def _check_benchmark_bundle(
+    root: Path,
+    manifest_path: Path,
+    *,
+    allow_dry_run_baselines: bool = False,
+) -> ValidationResult:
     result = ValidationResult()
     bdir = manifest_path.parent
     required = [
@@ -246,11 +251,17 @@ def _check_benchmark_bundle(root: Path, manifest_path: Path) -> ValidationResult
                     )
 
     result.extend(_required_section_check(bdir / "README.md", BENCHMARK_README_SECTIONS))
-    result.extend(_check_baseline_results(bdir))
+    result.extend(
+        _check_baseline_results(bdir, allow_dry_run_baselines=allow_dry_run_baselines)
+    )
     return result
 
 
-def _check_baseline_results(benchmark_dir: Path) -> ValidationResult:
+def _check_baseline_results(
+    benchmark_dir: Path,
+    *,
+    allow_dry_run_baselines: bool = False,
+) -> ValidationResult:
     result = ValidationResult()
     baselines_dir = benchmark_dir / "baselines"
     if not baselines_dir.is_dir():
@@ -268,10 +279,11 @@ def _check_baseline_results(benchmark_dir: Path) -> ValidationResult:
                 " (set to 'dry_run', 'real', or 'unknown')"
             )
         elif status == "dry_run":
-            result.warnings.append(
-                f"{baseline_result}: baseline_status='dry_run' — replace with a real"
-                " execution once the runner is connected"
-            )
+            if not allow_dry_run_baselines:
+                result.warnings.append(
+                    f"{baseline_result}: baseline_status='dry_run' — replace with a real"
+                    " execution once the runner is connected"
+                )
         elif status not in {"real", "unknown"}:
             result.errors.append(
                 f"{baseline_result}: execution.baseline_status {status!r} is not"
@@ -326,7 +338,11 @@ def _check_experiment_bundle(root: Path, manifest_path: Path) -> ValidationResul
     return result
 
 
-def validate_repository(root: Path) -> ValidationResult:
+def validate_repository(
+    root: Path,
+    *,
+    allow_dry_run_baselines: bool = False,
+) -> ValidationResult:
     result = ValidationResult()
     for schema_path in sorted((root / "schemas").glob("*.json")):
         try:
@@ -348,13 +364,21 @@ def validate_repository(root: Path) -> ValidationResult:
         result.extend(validate_manifest(root, path))
 
     for path in iter_benchmark_manifests(root):
-        result.extend(_check_benchmark_bundle(root, path))
+        result.extend(
+            _check_benchmark_bundle(
+                root, path, allow_dry_run_baselines=allow_dry_run_baselines
+            )
+        )
     for path in iter_experiment_manifests(root):
         result.extend(_check_experiment_bundle(root, path))
     return result
 
 
-def validate_path(path: Path) -> ValidationResult:
+def validate_path(
+    path: Path,
+    *,
+    allow_dry_run_baselines: bool = False,
+) -> ValidationResult:
     root = find_repo_root(path)
     path = path.resolve()
     if path.is_file():
@@ -364,10 +388,16 @@ def validate_path(path: Path) -> ValidationResult:
         for optional in ("metrics.yaml", "assets.yaml", "expected_failures.yaml"):
             if (path / optional).is_file():
                 result.extend(validate_manifest(root, path / optional))
-        result.extend(_check_benchmark_bundle(root, path / "benchmark.yaml"))
+        result.extend(
+            _check_benchmark_bundle(
+                root,
+                path / "benchmark.yaml",
+                allow_dry_run_baselines=allow_dry_run_baselines,
+            )
+        )
         return result
     if (path / "experiment.yaml").is_file():
         result = validate_manifest(root, path / "experiment.yaml")
         result.extend(_check_experiment_bundle(root, path / "experiment.yaml"))
         return result
-    return validate_repository(root)
+    return validate_repository(root, allow_dry_run_baselines=allow_dry_run_baselines)

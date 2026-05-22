@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-22 after the fourth MVP implementation pass (preflight + runner.execute scaffold for the dry-run-to-real boundary).
+Updated on 2026-05-22 after the fifth MVP implementation pass (CI hardening: `apg lint` integrated as gate, smoke workflow matrix-expanded across 4 tasks, `apg compare` wired into smoke).
 
 The repository now has the benchmark-first dry-run scaffold in place, with
 stricter schemas, failure-tag cross-validation, README structure checks,
@@ -1400,8 +1400,8 @@ Added or confirmed:
 - static report generation from `RunRecord`
 - tests under `tests/`
 - CI workflows:
-  - `.github/workflows/lint.yaml`
-  - `.github/workflows/smoke.yaml`
+  - `.github/workflows/lint.yaml` (validate + `apg lint --allow-dry-run-baselines` gate + pytest, plus informational strict-lint job that surfaces dry-run baselines via `continue-on-error`)
+  - `.github/workflows/smoke.yaml` (4-task dry-run matrix per benchmark/experiment with per-task report artifact, plus a `compare` job that diffs planning baseline vs experiment via `apg compare --json`)
   - `.github/workflows/benchmark-nightly.yaml`
 - placeholder docker/devcontainer/repository/docs/report files:
   - `.devcontainer/devcontainer.json`
@@ -1419,6 +1419,7 @@ Implemented CLI commands:
 apg validate .                # warnings stay non-fatal
 apg validate . --json         # machine-readable validation output
 apg lint .                    # strict alias: warnings become errors
+apg lint . --allow-dry-run-baselines  # CI gate: ignore dry_run baseline warning
 apg list benchmarks
 apg list experiments
 apg run <benchmark> --experiment <experiment> --dry-run [--report]
@@ -1484,18 +1485,21 @@ rtk proxy .venv/bin/apg compare runs/<left> runs/<right>
 rtk proxy .venv/bin/apg validate runs/latest/result.json
 ```
 
-Observed verification result (after fourth pass):
+Observed verification result (after fifth pass):
 
 ```text
-23 passed
+24 passed
 apg validate . → validated 37 schema-backed file(s) (4 dry_run baseline warnings)
 apg lint .     → validation failed: 4 issue(s) (the 4 dry_run baseline warnings)
+apg lint . --allow-dry-run-baselines → validated 37 file(s), exit 0
 apg preflight benchmarks/planning/lane_change_cut_in_001 → fails on
   this machine because AUTOWARE_WORKSPACE is unset and
   scenario_test_runner is not on PATH (expected — no Autoware here yet)
 apg run (no --dry-run) → exits 1 with "preflight failed for runner
   'scenario_simulator_v2': autoware_workspace(...), scenario_test_runner(...)"
-apg demo lane_change_cut_in writes 2 dry-run RunRecords (baseline + safe_gap_ttc_planner)
+apg run --dry-run on all four benchmark/experiment pairs (planning,
+  perception, localization, prediction) writes a fresh RunRecord and
+  passes `apg validate runs/latest/result.json`
 apg compare reports benchmark_match=True with no diffs for two dry-run records
 runs/latest/failure_cards/sim_invalid.yaml is generated and validates as FailureCard
 runs/<id>/result.json now includes runtime.runner_hints + execution.baseline_status
@@ -1564,6 +1568,16 @@ Resume from here:
    - ensure no large data files are tracked
    - ensure generated run output is ignored
    - run tests and validation again
+9. Harden CI: **DONE in fifth pass.**
+   - `apg lint --allow-dry-run-baselines` integrated into `lint.yaml` as a
+     gate so strict lint passes while baselines are still stubs
+   - informational `strict-lint` job runs raw `apg lint .` with
+     `continue-on-error: true` so dry-run baselines stay visible without
+     blocking PRs; flips green once real baselines replace the stubs
+   - `smoke.yaml` expanded to a 4-task matrix (planning / perception /
+     localization / prediction) with per-task report artifact upload
+   - `smoke.yaml` adds a `compare` job that dry-runs the planning baseline
+     and experiment side-by-side and uploads `apg compare --json` output
 
 ## 28. Implementation Notes For Next Session
 

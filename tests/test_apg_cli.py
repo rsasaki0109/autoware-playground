@@ -101,6 +101,14 @@ def test_lint_flags_dry_run_baselines(monkeypatch, capsys):
     assert err.count("baseline_status='dry_run'") == 4
 
 
+def test_lint_allow_dry_run_baselines_passes(monkeypatch, capsys):
+    monkeypatch.chdir(ROOT)
+    # With the CI-only allowance, dry-run baselines no longer fail strict lint.
+    assert main(["lint", ".", "--allow-dry-run-baselines"]) == 0
+    err = capsys.readouterr().err
+    assert "baseline_status='dry_run'" not in err
+
+
 def test_validate_json_output(monkeypatch, capsys):
     monkeypatch.chdir(ROOT)
     assert main(["validate", ".", "--json"]) == 0

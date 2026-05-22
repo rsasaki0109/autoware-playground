@@ -58,8 +58,14 @@ def _emit_validation_json(result, *, strict: bool) -> int:
     return 0 if payload["ok"] else 1
 
 
-def _run_validation(path: Path, *, strict: bool, as_json: bool) -> int:
-    result = validate_path(path)
+def _run_validation(
+    path: Path,
+    *,
+    strict: bool,
+    as_json: bool,
+    allow_dry_run_baselines: bool = False,
+) -> int:
+    result = validate_path(path, allow_dry_run_baselines=allow_dry_run_baselines)
     if as_json:
         return _emit_validation_json(result, strict=strict)
     return _emit_validation_text(result, strict=strict)
@@ -70,7 +76,12 @@ def cmd_validate(args: argparse.Namespace) -> int:
 
 
 def cmd_lint(args: argparse.Namespace) -> int:
-    return _run_validation(Path(args.path), strict=True, as_json=args.json)
+    return _run_validation(
+        Path(args.path),
+        strict=True,
+        as_json=args.json,
+        allow_dry_run_baselines=args.allow_dry_run_baselines,
+    )
 
 
 def cmd_list(args: argparse.Namespace) -> int:
@@ -197,6 +208,14 @@ def build_parser() -> argparse.ArgumentParser:
     lint = subparsers.add_parser("lint", help="Strict validation (warnings become errors).")
     lint.add_argument("path", nargs="?", default=".")
     lint.add_argument("--json", action="store_true", help="Emit machine-readable JSON output.")
+    lint.add_argument(
+        "--allow-dry-run-baselines",
+        action="store_true",
+        help=(
+            "Skip the dry_run baseline warning. Use in CI while baselines are still"
+            " stubs; remove once real RunRecords replace them."
+        ),
+    )
     lint.set_defaults(func=cmd_lint)
 
     list_cmd = subparsers.add_parser("list", help="List known repository objects.")

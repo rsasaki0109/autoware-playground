@@ -6,6 +6,22 @@ on:
 
 jobs:
   dry-run:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - task: planning
+            benchmark: benchmarks/planning/lane_change_cut_in_001
+            experiment: experiments/planning/safe_gap_ttc_planner
+          - task: perception
+            benchmark: benchmarks/perception/static_obstacle_lidar_001
+            experiment: experiments/perception/lidar_cluster_baseline
+          - task: localization
+            benchmark: benchmarks/localization/lidar_localization_replay_001
+            experiment: experiments/localization/icp_registration_toy
+          - task: prediction
+            benchmark: benchmarks/prediction/cut_in_prediction_001
+            experiment: experiments/prediction/constant_velocity_baseline
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,10 +32,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e tools/apg
-      - name: Planning dry run
+      - name: Dry run (${{ matrix.task }})
         run: |
-          apg run benchmarks/planning/lane_change_cut_in_001 \
-            --experiment experiments/planning/safe_gap_ttc_planner \
+          apg run ${{ matrix.benchmark }} \
+            --experiment ${{ matrix.experiment }} \
             --headless \
             --dry-run \
             --report
@@ -28,5 +44,41 @@ jobs:
       - name: Upload report
         uses: actions/upload-artifact@v4
         with:
-          name: apg-smoke-report
-          path: runs/latest/report.html
+          name: apg-smoke-report-${{ matrix.task }}
+          path: runs/latest/
+
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install apg
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e tools/apg
+      - name: Dry run baseline (planning autoware_baseline)
+        run: |
+          apg run benchmarks/planning/lane_change_cut_in_001 \
+            --experiment experiments/planning/autoware_baseline \
+            --headless \
+            --dry-run \
+            --output runs/_baseline
+      - name: Dry run experiment (planning safe_gap_ttc_planner)
+        run: |
+          apg run benchmarks/planning/lane_change_cut_in_001 \
+            --experiment experiments/planning/safe_gap_ttc_planner \
+            --headless \
+            --dry-run \
+            --output runs/_experiment
+      - name: Compare baseline vs experiment
+        run: |
+          BASELINE=$(ls -1 runs/_baseline/*/result.json | head -1)
+          EXPERIMENT=$(ls -1 runs/_experiment/*/result.json | head -1)
+          apg compare "$BASELINE" "$EXPERIMENT" --json | tee compare.json
+      - name: Upload compare result
+        uses: actions/upload-artifact@v4
+        with:
+          name: apg-smoke-compare
+          path: compare.json
