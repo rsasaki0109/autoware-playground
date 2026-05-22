@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-22 after the seventh MVP implementation pass (CI now runs the real (non-dry-run) rosbag_replay path end-to-end on GitHub Actions: `ros-tooling/setup-ros@v0.7` installs ROS 2 jazzy, a synthetic bag is generated, `apg run` writes a real RunRecord, and the workflow asserts `execution.baseline_status == "real"` before uploading the artifact).
+Updated on 2026-05-22 after the eighth MVP implementation pass (first **real** baseline committed: `benchmarks/localization/lidar_localization_replay_001/baselines/ndt_baseline/result.json` was replaced with the RunRecord produced by the CI `real-rosbag-replay` job — `baseline_status="real"`, `dry_run=False`, `status="completed"` — bringing the strict-lint dry-run baseline count from 4 down to 3).
 
 The repository now has the benchmark-first dry-run scaffold in place, with
 stricter schemas, failure-tag cross-validation, README structure checks,
@@ -1500,13 +1500,16 @@ rtk proxy .venv/bin/apg compare runs/<left> runs/<right>
 rtk proxy .venv/bin/apg validate runs/latest/result.json
 ```
 
-Observed verification result (after sixth pass):
+Observed verification result (after eighth pass):
 
 ```text
 29 passed (incl. e2e: synthetic bag generated + ros2 bag play in test)
-apg validate . → validated 37 schema-backed file(s) (4 dry_run baseline warnings)
-apg lint .     → validation failed: 4 issue(s) (the 4 dry_run baseline warnings)
-apg lint . --allow-dry-run-baselines → validated 37 file(s), exit 0
+apg validate . → validated 32 schema-backed file(s) (3 dry_run baseline warnings)
+apg lint .     → validation failed: 3 issue(s) (the 3 remaining dry_run baselines)
+apg lint . --allow-dry-run-baselines → exit 0
+CI smoke real-rosbag-replay job (run 26278498200) → ✓ in 3m1s,
+  produced the RunRecord now committed at
+  benchmarks/localization/lidar_localization_replay_001/baselines/ndt_baseline/result.json
 apg preflight benchmarks/planning/lane_change_cut_in_001 → fails on
   this machine because AUTOWARE_WORKSPACE is unset and
   scenario_test_runner is not on PATH (expected — no Autoware here yet)
@@ -1603,7 +1606,13 @@ Resume from here:
      localization / prediction) with per-task report artifact upload
    - `smoke.yaml` adds a `compare` job that dry-runs the planning baseline
      and experiment side-by-side and uploads `apg compare --json` output
-10. Run real benchmark in CI: **DONE in seventh pass (rosbag_replay only).**
+10. Run real benchmark in CI and commit the first real baseline:
+    **DONE in seventh + eighth passes (rosbag_replay only).**
+    - eighth pass: the RunRecord produced by the CI real-rosbag-replay
+      job is now committed as the localization/ndt_baseline baseline,
+      replacing the dry-run stub. This is the first real baseline in
+      the repository; the strict-lint dry-run baseline count drops
+      from 4 to 3 as a result.
     - `smoke.yaml` adds a `real-rosbag-replay` job that installs ROS 2
       jazzy via `ros-tooling/setup-ros@v0.7`, generates a synthetic
       rosbag with `tools/scripts/make_sample_rosbag.py`, runs
