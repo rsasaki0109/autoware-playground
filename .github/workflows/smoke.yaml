@@ -87,8 +87,19 @@ jobs:
           path: compare.json
 
   real-rosbag-replay:
-    # First REAL (non-dry-run) benchmark job: actually invokes
-    # `ros2 bag play` on a synthetic bag and writes a real RunRecord.
+    # REAL (non-dry-run) benchmark jobs: actually invoke
+    # `ros2 bag play` on a synthetic bag and write a real RunRecord
+    # for every rosbag_replay benchmark in the repository.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - task: localization
+            benchmark: benchmarks/localization/lidar_localization_replay_001
+            experiment: experiments/localization/ndt_baseline
+          - task: perception
+            benchmark: benchmarks/perception/static_obstacle_lidar_001
+            experiment: experiments/perception/lidar_cluster_baseline
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -109,14 +120,14 @@ jobs:
           mkdir -p /tmp/apg_data/rosbags
           python3 tools/scripts/make_sample_rosbag.py \
             /tmp/apg_data/rosbags/sample_lidar_localization_bag
-      - name: Run real rosbag_replay benchmark
+      - name: Run real rosbag_replay benchmark (${{ matrix.task }})
         shell: bash
         env:
           APG_DATA: /tmp/apg_data
         run: |
           source /opt/ros/jazzy/setup.bash
-          apg run benchmarks/localization/lidar_localization_replay_001 \
-            --experiment experiments/localization/ndt_baseline \
+          apg run ${{ matrix.benchmark }} \
+            --experiment ${{ matrix.experiment }} \
             --headless
       - name: Verify RunRecord is real
         shell: bash
@@ -124,7 +135,7 @@ jobs:
           source /opt/ros/jazzy/setup.bash
           apg validate runs/latest/result.json
           python3 - <<'PY'
-          import json, sys
+          import json
           d = json.load(open("runs/latest/result.json"))
           assert d["execution"]["baseline_status"] == "real", d["execution"]
           assert d["execution"]["dry_run"] is False, d["execution"]
@@ -136,5 +147,5 @@ jobs:
       - name: Upload real RunRecord
         uses: actions/upload-artifact@v4
         with:
-          name: apg-real-rosbag-replay
+          name: apg-real-rosbag-replay-${{ matrix.task }}
           path: runs/latest/
