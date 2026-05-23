@@ -236,21 +236,50 @@ jobs:
           # push. (runs/ itself is gitignored.) build_leaderboard prefers
           # reports/run_snapshots/<id>/ over runs/<id>/, so this also keeps
           # the artifact-side leaderboard pointing at stable paths.
+          #
+          # Two pruning rules avoid snapshot bloat:
+          #   1. Skip the snapshot entirely if a committed baseline already
+          #      exists for the (benchmark, experiment) pair — baselines
+          #      win in build_leaderboard so the snapshot would never be
+          #      read anyway.
+          #   2. Replace previous snapshots for the same (benchmark,
+          #      experiment, mode) instead of accumulating them.
           mkdir -p reports/run_snapshots
-          shopt -s nullglob
-          for d in ci_artifacts/apg-real-rosbag-replay-*/; do
-            [ -f "${d}result.json" ] || continue
-            run_id=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['run_id'])" "${d}result.json")
-            dest="reports/run_snapshots/${run_id}"
-            mkdir -p "$dest"
-            cp "${d}result.json" "${dest}/result.json"
-            # Carry the per-run report.html if the matrix step produced one
-            # so the HTML leaderboard can link to it.
-            if [ -f "${d}report.html" ]; then
-              cp "${d}report.html" "${dest}/report.html"
-            fi
-          done
-          ls reports/run_snapshots/
+          python3 <<'PY'
+          import glob
+          import json
+          import os
+          import shutil
+
+          for record_path in sorted(glob.glob("ci_artifacts/apg-real-rosbag-replay-*/result.json")):
+              record = json.load(open(record_path, encoding="utf-8"))
+              run_id = record["run_id"]
+              benchmark = record["benchmark"]
+              experiment = record["experiment"]
+              mode = "real" if not record.get("execution", {}).get("dry_run") else "dry_run"
+
+              baseline_matches = glob.glob(
+                  f"benchmarks/*/{benchmark}/baselines/{experiment}/result.json"
+              )
+              if baseline_matches:
+                  print(f"skip snapshot for {benchmark}/{experiment}: committed baseline at {baseline_matches[0]}")
+                  continue
+
+              suffix = f"_{benchmark}_{experiment}_{mode}"
+              for stale in glob.glob(f"reports/run_snapshots/*{suffix}"):
+                  if os.path.basename(stale) != run_id:
+                      print(f"prune stale snapshot {stale}")
+                      shutil.rmtree(stale)
+
+              dest = f"reports/run_snapshots/{run_id}"
+              os.makedirs(dest, exist_ok=True)
+              shutil.copy2(record_path, f"{dest}/result.json")
+              report_html = os.path.join(os.path.dirname(record_path), "report.html")
+              if os.path.isfile(report_html):
+                  shutil.copy2(report_html, f"{dest}/report.html")
+              print(f"snapshot {run_id} for {benchmark}/{experiment}")
+          PY
+          ls reports/run_snapshots/ || true
       - name: Regenerate baseline report.html
         # Make sure every committed baseline has a sibling report.html so the
         # HTML leaderboard can link to it (apg report is idempotent).
@@ -309,7 +338,9 @@ jobs:
             git add "$r"
           done
           if [ -d reports/run_snapshots ]; then
-            git add reports/run_snapshots
+            # `git add -A` so directories pruned by the snapshot step are
+            # staged as deletions, not just the new content as additions.
+            git add -A reports/run_snapshots
           fi
           if git diff --cached --quiet; then
             echo "reports unchanged; skipping commit."

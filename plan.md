@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-23 after the sixteenth MVP implementation pass (Leaderboard regression alert: `apg leaderboard-diff <base.json> <head.json> [--fail-on-change]` produces a compact markdown diff of two leaderboard JSON dumps, filtering environment-noise metrics. The CI bot now also commits `reports/leaderboard.json` on main push, and a new `leaderboard-diff` job on `pull_request` fetches main's JSON, diffs it against the head, and writes the result to `$GITHUB_STEP_SUMMARY` so PR reviewers see the benchmark delta at a glance).
+Updated on 2026-05-23 after the seventeenth MVP implementation pass (Snapshot prune: the CI leaderboard job now skips snapshotting (benchmark, experiment) pairs that already have a committed baseline, and replaces — rather than accumulates — prior snapshots for the same (benchmark, experiment, mode) tuple. `git add -A reports/run_snapshots` makes the bot commit reflect pruned directories as deletions. Five stale snapshots from earlier passes were removed in the same commit, leaving exactly the one snapshot per non-baseline experiment that build_leaderboard actually consumes).
 
 The remaining stretch goal toward a leaderboard:
 
@@ -1721,6 +1721,19 @@ Resume from here:
       the step summary. The bot's main-push commit now also
       includes `reports/leaderboard.json` so PR jobs have something
       to diff against.
+    - seventeenth pass: snapshot prune in the CI leaderboard job.
+      The staging step now (a) skips snapshotting any
+      (benchmark, experiment) pair that already has a committed
+      baseline (those rows resolve via the baseline, so the
+      snapshot would never be read by `build_leaderboard`); and
+      (b) prunes prior snapshots for the same
+      (benchmark, experiment, mode) tuple before writing the new
+      one, so `reports/run_snapshots/` holds at most one entry per
+      pair instead of accumulating every CI run forever. The bot's
+      commit step uses `git add -A reports/run_snapshots` so
+      pruned directories are staged as deletions, not just the new
+      content as additions. The five stale snapshots accumulated
+      by earlier passes were cleaned up in the same commit.
 
 ## 28. Implementation Notes For Next Session
 
