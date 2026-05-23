@@ -29,7 +29,7 @@ class LeaderboardEntry:
     experiment: str
     task: str
     run_id: str | None
-    source: str  # "baseline" | "runs" | "missing"
+    source: str  # "baseline" | "snapshot" | "runs" | "missing"
     baseline_status: str | None
     status: str | None
     failures: list[str] = field(default_factory=list)
@@ -129,22 +129,29 @@ def _select_best_record(
     benchmark_name: str,
     experiment_name: str,
     runs_root: Path | None,
+    snapshots_root: Path | None = None,
 ) -> tuple[Path | None, str]:
     """Pick the most relevant RunRecord for (benchmark, experiment).
 
     Preference order:
       1. baseline matching the experiment name (most specific)
-      2. most recent runs/<id>/result.json whose benchmark + experiment match
+      2. most recent reports/run_snapshots/<id>/result.json whose benchmark +
+         experiment match (committed CI-run snapshots — preferred over runs/
+         because they live in-tree and so their report.html links resolve
+         when published)
+      3. most recent runs/<id>/result.json whose benchmark + experiment match
          and that is a non-dry-run record
-      3. None — show the row as "missing"
+      4. None — show the row as "missing"
     """
     baseline_result = benchmark_dir / "baselines" / experiment_name / "result.json"
     if baseline_result.is_file():
         return baseline_result, "baseline"
 
-    if runs_root and runs_root.is_dir():
-        candidates: list[Path] = []
-        for record_path in sorted(runs_root.glob("*/result.json")):
+    def _scan(directory: Path | None) -> list[Path]:
+        if not directory or not directory.is_dir():
+            return []
+        matches: list[Path] = []
+        for record_path in sorted(directory.glob("*/result.json")):
             try:
                 doc = json.loads(record_path.read_text(encoding="utf-8"))
             except Exception:
@@ -155,9 +162,16 @@ def _select_best_record(
                 continue
             if doc.get("execution", {}).get("dry_run"):
                 continue
-            candidates.append(record_path)
-        if candidates:
-            return candidates[-1], "runs"
+            matches.append(record_path)
+        return matches
+
+    snapshot_candidates = _scan(snapshots_root)
+    if snapshot_candidates:
+        return snapshot_candidates[-1], "snapshot"
+
+    run_candidates = _scan(runs_root)
+    if run_candidates:
+        return run_candidates[-1], "runs"
 
     return None, "missing"
 
@@ -175,6 +189,7 @@ def _experiment_refs(experiment_doc: dict[str, Any]) -> set[str]:
 
 def build_leaderboard(root: Path) -> Leaderboard:
     runs_root = root / "runs"
+    snapshots_root = root / "reports" / "run_snapshots"
     benchmark_manifests = iter_benchmark_manifests(root)
 
     experiment_index: dict[str, dict[str, Any]] = {}
@@ -207,7 +222,11 @@ def build_leaderboard(root: Path) -> Leaderboard:
             exp_doc = experiment_index[exp_rel]
             exp_name = exp_doc.get("name", Path(exp_rel).name)
             record_path, source = _select_best_record(
-                benchmark_dir, benchmark_name, exp_name, runs_root
+                benchmark_dir,
+                benchmark_name,
+                exp_name,
+                runs_root,
+                snapshots_root,
             )
             entry = LeaderboardEntry(
                 benchmark=benchmark_name,
@@ -373,6 +392,7 @@ td.value {
   white-space: nowrap;
 }
 .source-baseline { color: #46545d; }
+.source-snapshot { color: #2c6e49; }
 .source-runs { color: #2c6e49; }
 .source-missing { color: #b03434; }
 a { color: #1f5fa3; text-decoration: none; }

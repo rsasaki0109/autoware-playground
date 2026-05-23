@@ -607,12 +607,13 @@ def test_leaderboard_html_link_base_prefixes_links(monkeypatch, capsys):
     monkeypatch.chdir(ROOT)
     assert main(["leaderboard", "--format", "html", "--link-base", ".."]) == 0
     out = capsys.readouterr().out
-    # ndt_baseline result.json must be reachable via the link_base prefix
-    expected = (
-        '<a href="../benchmarks/localization/lidar_localization_replay_001'
-        '/baselines/ndt_baseline/result.json">ndt_baseline</a>'
+    # ndt_baseline must be reachable via the link_base prefix. Prefer
+    # report.html when the baseline has one, else fall back to result.json.
+    baseline_dir = "../benchmarks/localization/lidar_localization_replay_001/baselines/ndt_baseline"
+    assert (
+        f'<a href="{baseline_dir}/report.html">ndt_baseline</a>' in out
+        or f'<a href="{baseline_dir}/result.json">ndt_baseline</a>' in out
     )
-    assert expected in out
 
 
 def test_leaderboard_html_marks_missing_rows_without_link(monkeypatch, capsys):
@@ -622,6 +623,67 @@ def test_leaderboard_html_marks_missing_rows_without_link(monkeypatch, capsys):
     # safe_gap_ttc_planner has no record so the experiment cell is plain text,
     # not an anchor.
     assert "<td>safe_gap_ttc_planner</td>" in out
+
+
+def test_leaderboard_prefers_run_snapshot_over_runs_dir(tmp_path):
+    # build_leaderboard should pick a committed reports/run_snapshots/<id>/
+    # record over a transient runs/<id>/ record so the HTML leaderboard's
+    # per-row links resolve in-tree on a fresh checkout.
+    repo = tmp_path / "repo"
+    bench_dir = repo / "benchmarks" / "fake" / "fake_bench_002"
+    bench_dir.mkdir(parents=True)
+    (bench_dir / "benchmark.yaml").write_text(
+        "api_version: apg/v0\nkind: Benchmark\nname: fake_bench_002\ntask: fake\n"
+        "runner:\n  type: rosbag_replay\n"
+        "gates:\n  required: []\n  diagnostic: []\n",
+        encoding="utf-8",
+    )
+    (repo / "experiments" / "fake" / "fake_method").mkdir(parents=True)
+    (repo / "experiments" / "fake" / "fake_method" / "experiment.yaml").write_text(
+        "api_version: apg/v0\nkind: Experiment\nname: fake_method\ntask: fake\n"
+        "mode: shadow\nbenchmarks:\n  smoke:\n    - benchmarks/fake/fake_bench_002\n",
+        encoding="utf-8",
+    )
+
+    def _write_record(directory: Path, run_id: str, marker: str) -> None:
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "result.json").write_text(
+            json.dumps(
+                {
+                    "api_version": "apg/v0",
+                    "kind": "RunRecord",
+                    "run_id": run_id,
+                    "experiment": "fake_method",
+                    "benchmark": "fake_bench_002",
+                    "execution": {
+                        "baseline_status": "real",
+                        "status": "completed",
+                        "dry_run": False,
+                    },
+                    "metrics": {"marker": marker},
+                    "failures": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    _write_record(repo / "runs" / "transient_run", "transient_run", "from_runs")
+    _write_record(
+        repo / "reports" / "run_snapshots" / "snapshot_run",
+        "snapshot_run",
+        "from_snapshot",
+    )
+    (repo / "reports" / "run_snapshots" / "snapshot_run" / "report.html").write_text(
+        "<html></html>", encoding="utf-8"
+    )
+
+    board = build_leaderboard(repo)
+    entry = next(e for e in board.entries if e.experiment == "fake_method")
+    assert entry.source == "snapshot"
+    assert entry.run_id == "snapshot_run"
+    assert entry.report_link == (
+        "reports/run_snapshots/snapshot_run/report.html"
+    )
 
 
 def test_leaderboard_html_uses_report_link_when_available(tmp_path):

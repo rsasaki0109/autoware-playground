@@ -179,15 +179,20 @@ jobs:
         with:
           pattern: apg-real-rosbag-replay-*
           path: ci_artifacts/
-      - name: Stage RunRecords into runs/
+      - name: Stage RunRecords into reports/run_snapshots/
         shell: bash
         run: |
-          mkdir -p runs
+          # Stage non-baseline real RunRecords into a *committed* path so the
+          # HTML leaderboard's per-row links resolve in-tree after the bot
+          # push. (runs/ itself is gitignored.) build_leaderboard prefers
+          # reports/run_snapshots/<id>/ over runs/<id>/, so this also keeps
+          # the artifact-side leaderboard pointing at stable paths.
+          mkdir -p reports/run_snapshots
           shopt -s nullglob
           for d in ci_artifacts/apg-real-rosbag-replay-*/; do
             [ -f "${d}result.json" ] || continue
             run_id=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['run_id'])" "${d}result.json")
-            dest="runs/${run_id}"
+            dest="reports/run_snapshots/${run_id}"
             mkdir -p "$dest"
             cp "${d}result.json" "${dest}/result.json"
             # Carry the per-run report.html if the matrix step produced one
@@ -196,7 +201,7 @@ jobs:
               cp "${d}report.html" "${dest}/report.html"
             fi
           done
-          ls runs/
+          ls reports/run_snapshots/
       - name: Regenerate baseline report.html
         # Make sure every committed baseline has a sibling report.html so the
         # HTML leaderboard can link to it (apg report is idempotent).
@@ -243,13 +248,17 @@ jobs:
             cat leaderboard.md
           } > reports/leaderboard.md
           cp leaderboard.html reports/leaderboard.html
-          # Also stage any baseline report.html that regeneration produced so
-          # the HTML leaderboard's links resolve in-tree.
+          # Also stage any baseline report.html that regeneration produced
+          # and the freshly-snapshotted CI runs so the HTML leaderboard's
+          # links resolve in-tree.
           git add reports/leaderboard.md reports/leaderboard.html
           shopt -s nullglob
           for r in benchmarks/*/*/baselines/*/report.html; do
             git add "$r"
           done
+          if [ -d reports/run_snapshots ]; then
+            git add reports/run_snapshots
+          fi
           if git diff --cached --quiet; then
             echo "reports unchanged; skipping commit."
             exit 0

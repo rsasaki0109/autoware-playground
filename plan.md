@@ -1698,7 +1698,12 @@ Resume from here:
       part of the `apg-leaderboard` artifact; and on main push
       commits `reports/leaderboard.html` and every
       `benchmarks/*/*/baselines/*/report.html` so the links resolve
-      in-tree.
+      in-tree. Real CI-only runs (no committed baseline) are
+      snapshotted into `reports/run_snapshots/<id>/` and committed
+      as well; `build_leaderboard` now prefers
+      `reports/run_snapshots/<id>/result.json` over the gitignored
+      `runs/<id>/result.json` so every link in the published
+      `reports/leaderboard.html` resolves on a fresh checkout.
 
 ## 28. Implementation Notes For Next Session
 
