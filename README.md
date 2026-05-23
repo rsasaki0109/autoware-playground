@@ -139,7 +139,10 @@ apg preflight <benchmark> [--runner ...] [--json]  # check env before non-dry-ru
 
 Tip: write the HTML version with `apg leaderboard --format html --link-base .. > reports/leaderboard.html` so per-row links escape `reports/` and reach `benchmarks/` and `runs/` at the repo root.
 
-`apg leaderboard-diff` powers the **PR regression alert** — every pull request runs `leaderboard-diff` against `main`'s published `reports/leaderboard.json` and writes the result to the smoke job's step summary, so reviewers see at a glance whether the PR moved a benchmark metric, flipped a status, or added/removed a row.
+`apg leaderboard-diff` powers the **PR regression alert** — every pull request runs `leaderboard-diff` against `main`'s published `reports/leaderboard.json` and:
+
+- writes the result to the smoke job's step summary, and
+- posts (or updates) a **sticky comment on the PR itself** so reviewers see the benchmark delta in the conversation thread. The comment refreshes in place on every push to the PR — it never accumulates duplicate comments.
 
 ## Status
 
@@ -147,7 +150,7 @@ Tip: write the HTML version with `apg leaderboard --format html --link-base .. >
 - ✅ FailureCard schema + auto-stub generation + report linking
 - ✅ Real `rosbag_replay` execution (local + CI) and 2 real baselines
 - ✅ CI-generated leaderboard committed to `reports/leaderboard.{md,html,json}` (HTML rows link to each `report.html`)
-- ✅ PR regression alert: `apg leaderboard-diff` against `main` in the smoke step summary
+- ✅ PR regression alert: `apg leaderboard-diff` against `main`, surfaced both in the smoke step summary and as a sticky PR comment
 - ✅ Live leaderboard on GitHub Pages (auto-published on every `main` push)
 - 🚧 Real `scenario_simulator_v2` (needs pinned Autoware workspace)
 - 🚧 Promote remaining 2 baselines (planning, prediction) to real

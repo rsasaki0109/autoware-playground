@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-23 after the eighteenth MVP implementation pass (GitHub Pages publication: new `.github/workflows/pages.yaml` assembles `reports/` and the committed baseline `report.html` files into `_site/` preserving repo layout so the committed leaderboard HTML's `--link-base ..` links resolve unchanged, redirects `/` to `/reports/leaderboard.html`, and deploys via the official `upload-pages-artifact` + `deploy-pages` actions on every `main` push that touches `reports/**` or baselines. One-time user setup needed: repo Settings → Pages → Source = GitHub Actions; live URL is then `https://rsasaki0109.github.io/autoware-playground/`).
+Updated on 2026-05-23 after the nineteenth MVP implementation pass (Sticky PR comment for leaderboard-diff: the `leaderboard-diff` job in smoke.yaml now also posts/updates a sticky comment on the PR itself, in addition to writing to `$GITHUB_STEP_SUMMARY`. Sticky behavior is implemented inline with `gh api` and an HTML-comment marker `<!-- apg-leaderboard-diff -->`, so pushing more commits to the PR refreshes the same comment instead of accumulating duplicates. Zero third-party action dependency).
 
 The remaining stretch goal toward a leaderboard:
 
@@ -1748,6 +1748,16 @@ Resume from here:
       One-time setup needed: in repo Settings → Pages, set
       "Source" to "GitHub Actions". Live URL is then
       `https://rsasaki0109.github.io/autoware-playground/`.
+    - nineteenth pass: sticky PR comment for leaderboard-diff.
+      The `leaderboard-diff` job in `smoke.yaml` now also posts (or
+      updates) a sticky comment on the PR itself in addition to
+      writing to `$GITHUB_STEP_SUMMARY`. Sticky behavior is
+      implemented inline with `gh api` and an HTML-comment marker
+      `<!-- apg-leaderboard-diff -->` — the step lists the PR's
+      comments, PATCHes the one carrying the marker if present, or
+      POSTs a new one otherwise. No third-party action dependency.
+      The job grew `permissions: pull-requests: write` so the
+      `GITHUB_TOKEN` can write comments.
 
 ## 28. Implementation Notes For Next Session
 
