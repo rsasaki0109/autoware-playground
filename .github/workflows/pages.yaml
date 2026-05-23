@@ -1,0 +1,92 @@
+name: pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # Only redeploy when content the site shows actually changed —
+      # avoids re-deploying on every README or source-only commit.
+      - "reports/**"
+      - "benchmarks/**/baselines/**"
+      - ".github/workflows/pages.yaml"
+  workflow_dispatch:
+
+# Prevent two deploys from racing on rapid main pushes.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble site
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          # Preserve repo layout under _site/ so the committed
+          # reports/leaderboard.html (whose links use --link-base "..")
+          # resolves links like:
+          #   ../benchmarks/<task>/<bench>/baselines/<exp>/report.html
+          #   ../reports/run_snapshots/<id>/report.html
+          # without having to regenerate the HTML.
+          if [ -d reports ]; then
+            mkdir -p _site/reports
+            cp -r reports/. _site/reports/
+          fi
+          # Mirror the four committed baseline report.html files (and
+          # nothing else under benchmarks/) so the leaderboard's
+          # baseline-row links resolve.
+          if compgen -G "benchmarks/*/*/baselines/*/report.html" > /dev/null; then
+            for r in benchmarks/*/*/baselines/*/report.html; do
+              mkdir -p "_site/$(dirname "$r")"
+              cp "$r" "_site/$r"
+            done
+          fi
+          # Landing page: redirect / -> /reports/leaderboard.html
+          cat > _site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>autoware-playground leaderboard</title>
+            <meta http-equiv="refresh" content="0; url=reports/leaderboard.html">
+            <link rel="canonical" href="reports/leaderboard.html">
+            <style>
+              body { font-family: system-ui, -apple-system, sans-serif; margin: 4em auto; max-width: 40em; padding: 0 1em; color: #172026; }
+              a { color: #1f5fa3; }
+            </style>
+          </head>
+          <body>
+            <h1>autoware-playground</h1>
+            <p>Redirecting to the <a href="reports/leaderboard.html">leaderboard</a>&hellip;</p>
+            <p>If the redirect doesn't fire, click the link above.</p>
+          </body>
+          </html>
+          HTML
+          echo "=== _site contents ==="
+          find _site -maxdepth 3 -type f | sort
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

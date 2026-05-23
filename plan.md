@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-23 after the seventeenth MVP implementation pass (Snapshot prune: the CI leaderboard job now skips snapshotting (benchmark, experiment) pairs that already have a committed baseline, and replaces — rather than accumulates — prior snapshots for the same (benchmark, experiment, mode) tuple. `git add -A reports/run_snapshots` makes the bot commit reflect pruned directories as deletions. Five stale snapshots from earlier passes were removed in the same commit, leaving exactly the one snapshot per non-baseline experiment that build_leaderboard actually consumes).
+Updated on 2026-05-23 after the eighteenth MVP implementation pass (GitHub Pages publication: new `.github/workflows/pages.yaml` assembles `reports/` and the committed baseline `report.html` files into `_site/` preserving repo layout so the committed leaderboard HTML's `--link-base ..` links resolve unchanged, redirects `/` to `/reports/leaderboard.html`, and deploys via the official `upload-pages-artifact` + `deploy-pages` actions on every `main` push that touches `reports/**` or baselines. One-time user setup needed: repo Settings → Pages → Source = GitHub Actions; live URL is then `https://rsasaki0109.github.io/autoware-playground/`).
 
 The remaining stretch goal toward a leaderboard:
 
@@ -1734,6 +1734,20 @@ Resume from here:
       pruned directories are staged as deletions, not just the new
       content as additions. The five stale snapshots accumulated
       by earlier passes were cleaned up in the same commit.
+    - eighteenth pass: GitHub Pages publication.
+      New `.github/workflows/pages.yaml` assembles a `_site/` tree
+      from `reports/` and the committed
+      `benchmarks/*/*/baselines/*/report.html` files, preserving the
+      repo layout so the committed `reports/leaderboard.html`
+      (rendered with `--link-base ..`) resolves its per-row links
+      unmodified. A small `_site/index.html` redirects the site
+      root to `/reports/leaderboard.html`. Deploy uses the official
+      `actions/upload-pages-artifact@v3` + `actions/deploy-pages@v4`
+      pair, triggered on every push to `main` that touches
+      `reports/**` or baseline content (and on `workflow_dispatch`).
+      One-time setup needed: in repo Settings → Pages, set
+      "Source" to "GitHub Actions". Live URL is then
+      `https://rsasaki0109.github.io/autoware-playground/`.
 
 ## 28. Implementation Notes For Next Session
 
