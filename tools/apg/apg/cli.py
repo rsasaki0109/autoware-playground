@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .compare import compare_run_records, format_compare_text
 from .leaderboard import emit_leaderboard
+from .leaderboard_diff import diff_paths, format_diff_markdown
 from .preflight import format_preflight_text, preflight_for_runner
 from .report import write_report
 from .run import ApgRunError, run_demo, run_dry_run, run_real
@@ -157,6 +158,21 @@ def cmd_leaderboard(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_leaderboard_diff(args: argparse.Namespace) -> int:
+    try:
+        diff = diff_paths(Path(args.base), Path(args.head))
+    except FileNotFoundError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if args.format == "json":
+        print(json.dumps(diff.to_dict(), indent=2, sort_keys=True))
+    else:
+        print(format_diff_markdown(diff), end="")
+    if args.fail_on_change and diff.has_changes:
+        return 1
+    return 0
+
+
 def cmd_report(args: argparse.Namespace) -> int:
     try:
         report_path = write_report(Path(args.result), Path(args.output) if args.output else None)
@@ -279,6 +295,28 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     leaderboard.set_defaults(func=cmd_leaderboard)
+
+    leaderboard_diff = subparsers.add_parser(
+        "leaderboard-diff",
+        help=(
+            "Diff two leaderboard JSON dumps. Useful in CI pull_request jobs"
+            " to surface benchmark regressions introduced by a PR."
+        ),
+    )
+    leaderboard_diff.add_argument("base", help="Baseline leaderboard JSON path (e.g. main).")
+    leaderboard_diff.add_argument("head", help="Head leaderboard JSON path (e.g. this PR).")
+    leaderboard_diff.add_argument(
+        "--format",
+        choices=["markdown", "json"],
+        default="markdown",
+        help="Output format (default: markdown).",
+    )
+    leaderboard_diff.add_argument(
+        "--fail-on-change",
+        action="store_true",
+        help="Exit non-zero when any benchmark row changed (useful as a PR gate).",
+    )
+    leaderboard_diff.set_defaults(func=cmd_leaderboard_diff)
 
     preflight = subparsers.add_parser(
         "preflight",

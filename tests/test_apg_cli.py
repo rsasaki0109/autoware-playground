@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / "tools" / "apg"))
 from apg.cli import main
 from apg.compare import compare_run_records
 from apg.leaderboard import build_leaderboard, emit_leaderboard
+from apg.leaderboard_diff import compute_diff, format_diff_markdown
 from apg.preflight import preflight_for_runner
 from apg.report import write_report
 from apg.run import ApgRunError, run_demo, run_dry_run, run_real
@@ -744,3 +745,154 @@ def test_failure_card_schema_validates(tmp_path):
     path.write_text(yaml.safe_dump(card, sort_keys=False), encoding="utf-8")
     result = validate_manifest(ROOT, path)
     assert result.ok, "\n".join(result.errors)
+
+
+
+def _sample_leaderboard(*entries):
+    return {
+        "blocks": [],
+        "columns": [],
+        "entries": list(entries),
+    }
+
+
+def _entry(benchmark, experiment, *, status="completed", metrics=None, failures=None):
+    return {
+        "benchmark": benchmark,
+        "experiment": experiment,
+        "task": "fake",
+        "run_id": f"{benchmark}_{experiment}_run",
+        "source": "baseline",
+        "baseline_status": "real",
+        "status": status,
+        "failures": list(failures or []),
+        "metrics": dict(metrics or {}),
+    }
+
+
+def test_leaderboard_diff_identical_no_changes():
+    base = _sample_leaderboard(_entry("b1", "e1", metrics={"acc": 0.8}))
+    head = copy.deepcopy(base)
+    diff = compute_diff(base, head)
+    assert not diff.has_changes
+    md = format_diff_markdown(diff)
+    assert "No benchmark rows changed." in md
+
+
+def test_leaderboard_diff_metric_delta_is_surfaced():
+    base = _sample_leaderboard(_entry("b1", "e1", metrics={"acc": 0.8, "lat_ms": 12}))
+    head = _sample_leaderboard(_entry("b1", "e1", metrics={"acc": 0.74, "lat_ms": 12}))
+    diff = compute_diff(base, head)
+    assert diff.has_changes
+    [entry_diff] = diff.changed
+    assert entry_diff.kind == "changed"
+    assert len(entry_diff.metric_changes) == 1
+    [change] = entry_diff.metric_changes
+    assert change.name == "acc"
+    assert change.base == 0.8
+    assert change.head == 0.74
+
+
+def test_leaderboard_diff_ignores_noisy_metrics():
+    # play_elapsed_sec is environment noise; should not surface as a change
+    base = _sample_leaderboard(_entry("b1", "e1", metrics={"play_elapsed_sec": 1.4}))
+    head = _sample_leaderboard(_entry("b1", "e1", metrics={"play_elapsed_sec": 3.2}))
+    diff = compute_diff(base, head)
+    assert not diff.has_changes
+
+
+def test_leaderboard_diff_detects_added_and_removed_rows():
+    base = _sample_leaderboard(_entry("b1", "e1"), _entry("b1", "e_dropped"))
+    head = _sample_leaderboard(_entry("b1", "e1"), _entry("b1", "e_new"))
+    diff = compute_diff(base, head)
+    kinds = {(d.benchmark, d.experiment): d.kind for d in diff.diffs}
+    assert kinds[("b1", "e_dropped")] == "removed"
+    assert kinds[("b1", "e_new")] == "added"
+    assert kinds[("b1", "e1")] == "unchanged"
+
+
+def test_leaderboard_diff_status_and_failure_changes():
+    base = _sample_leaderboard(
+        _entry("b1", "e1", status="completed", failures=[])
+    )
+    head = _sample_leaderboard(
+        _entry("b1", "e1", status="failed", failures=["sim_invalid"])
+    )
+    diff = compute_diff(base, head)
+    [entry_diff] = diff.changed
+    assert entry_diff.status_change == ("completed", "failed")
+    assert entry_diff.failure_added == ["sim_invalid"]
+    md = format_diff_markdown(diff)
+    assert "completed → failed" in md
+    assert "sim_invalid" in md
+
+
+def test_leaderboard_diff_supports_blocks_payload():
+    # A real leaderboard JSON dump uses the blocks structure; the diff must
+    # accept it transparently.
+    payload_base = {
+        "blocks": [
+            {
+                "benchmark": "b1",
+                "task": "fake",
+                "runner": "rosbag_replay",
+                "columns": ["acc"],
+                "entries": [_entry("b1", "e1", metrics={"acc": 0.9})],
+            }
+        ]
+    }
+    payload_head = {
+        "blocks": [
+            {
+                "benchmark": "b1",
+                "task": "fake",
+                "runner": "rosbag_replay",
+                "columns": ["acc"],
+                "entries": [_entry("b1", "e1", metrics={"acc": 0.8})],
+            }
+        ]
+    }
+    diff = compute_diff(payload_base, payload_head)
+    [entry_diff] = diff.changed
+    [change] = entry_diff.metric_changes
+    assert change.base == 0.9 and change.head == 0.8
+
+
+def test_leaderboard_diff_cli_fail_on_change(tmp_path, monkeypatch, capsys):
+    base_path = tmp_path / "base.json"
+    head_path = tmp_path / "head.json"
+    base_path.write_text(
+        json.dumps(_sample_leaderboard(_entry("b1", "e1", metrics={"acc": 0.9}))),
+        encoding="utf-8",
+    )
+    head_path.write_text(
+        json.dumps(_sample_leaderboard(_entry("b1", "e1", metrics={"acc": 0.5}))),
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(ROOT)
+    rc = main([
+        "leaderboard-diff",
+        str(base_path),
+        str(head_path),
+        "--fail-on-change",
+    ])
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "## Leaderboard diff" in out
+    assert "acc" in out
+
+
+def test_leaderboard_diff_cli_returns_zero_when_identical(tmp_path, monkeypatch, capsys):
+    base_path = tmp_path / "base.json"
+    head_path = tmp_path / "head.json"
+    payload = json.dumps(_sample_leaderboard(_entry("b1", "e1", metrics={"acc": 0.9})))
+    base_path.write_text(payload, encoding="utf-8")
+    head_path.write_text(payload, encoding="utf-8")
+    monkeypatch.chdir(ROOT)
+    rc = main([
+        "leaderboard-diff",
+        str(base_path),
+        str(head_path),
+        "--fail-on-change",
+    ])
+    assert rc == 0

@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-23 after the fifteenth MVP implementation pass (HTML leaderboard: `apg leaderboard --format html [--link-base ..]` renders a styled page with one block per benchmark and per-row hyperlinks to `report.html` / `result.json`. CI now passes `--report` to the real `rosbag_replay` matrix step, regenerates `report.html` for every committed baseline, and on main push commits both `reports/leaderboard.html` and the baseline `report.html` files so links resolve in-tree).
+Updated on 2026-05-23 after the sixteenth MVP implementation pass (Leaderboard regression alert: `apg leaderboard-diff <base.json> <head.json> [--fail-on-change]` produces a compact markdown diff of two leaderboard JSON dumps, filtering environment-noise metrics. The CI bot now also commits `reports/leaderboard.json` on main push, and a new `leaderboard-diff` job on `pull_request` fetches main's JSON, diffs it against the head, and writes the result to `$GITHUB_STEP_SUMMARY` so PR reviewers see the benchmark delta at a glance).
 
 The remaining stretch goal toward a leaderboard:
 
@@ -1704,6 +1704,23 @@ Resume from here:
       `reports/run_snapshots/<id>/result.json` over the gitignored
       `runs/<id>/result.json` so every link in the published
       `reports/leaderboard.html` resolves on a fresh checkout.
+    - sixteenth pass: leaderboard regression alert on PRs.
+      New `tools/apg/apg/leaderboard_diff.py` builds an `EntryDiff`
+      per (benchmark, experiment) pair from two leaderboard JSON
+      payloads (accepts both the `entries` flat view and the
+      `blocks` block-per-benchmark view). Environment-noise metrics
+      (`play_elapsed_sec`, `play_timed_out`) are filtered out so
+      they don't surface as regressions. New
+      `apg leaderboard-diff <base.json> <head.json>
+      [--format markdown|json] [--fail-on-change]` subcommand;
+      markdown output is a compact table suitable for
+      `$GITHUB_STEP_SUMMARY`. CI gains a `leaderboard-diff` job
+      that runs on every pull_request, builds the head JSON, fetches
+      main's published `reports/leaderboard.json` (falling back to
+      an empty board if main has none yet), and writes the diff to
+      the step summary. The bot's main-push commit now also
+      includes `reports/leaderboard.json` so PR jobs have something
+      to diff against.
 
 ## 28. Implementation Notes For Next Session
 
