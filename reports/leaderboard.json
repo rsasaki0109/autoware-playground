@@ -1,0 +1,329 @@
+{
+  "blocks": [
+    {
+      "benchmark": "lidar_localization_replay_001",
+      "columns": [
+        "pose_output_available",
+        "no_localization_lost",
+        "convergence_time_sec",
+        "pose_jump_count",
+        "play_returncode",
+        "play_elapsed_sec",
+        "rosbag_message_count"
+      ],
+      "entries": [
+        {
+          "baseline_status": "real",
+          "benchmark": "lidar_localization_replay_001",
+          "experiment": "icp_registration_toy",
+          "failures": [],
+          "metrics": {
+            "convergence_time_sec": null,
+            "no_localization_lost": null,
+            "play_elapsed_sec": 1.451,
+            "play_returncode": 0,
+            "play_timed_out": false,
+            "pose_jump_count": null,
+            "pose_output_available": null,
+            "rosbag_duration_sec": 0.9,
+            "rosbag_message_count": 10,
+            "rosbag_topic_count": 1
+          },
+          "record_link": "reports/run_snapshots/20260523T031903746702Z_lidar_localization_replay_001_icp_registration_toy_real/result.json",
+          "report_link": "reports/run_snapshots/20260523T031903746702Z_lidar_localization_replay_001_icp_registration_toy_real/report.html",
+          "run_id": "20260523T031903746702Z_lidar_localization_replay_001_icp_registration_toy_real",
+          "source": "snapshot",
+          "status": "completed",
+          "task": "localization"
+        },
+        {
+          "baseline_status": "real",
+          "benchmark": "lidar_localization_replay_001",
+          "experiment": "ndt_baseline",
+          "failures": [],
+          "metrics": {
+            "convergence_time_sec": null,
+            "no_localization_lost": null,
+            "play_elapsed_sec": 1.457,
+            "play_returncode": 0,
+            "play_timed_out": false,
+            "pose_jump_count": null,
+            "pose_output_available": null,
+            "rosbag_duration_sec": 0.9,
+            "rosbag_message_count": 10,
+            "rosbag_topic_count": 1
+          },
+          "record_link": "benchmarks/localization/lidar_localization_replay_001/baselines/ndt_baseline/result.json",
+          "report_link": "benchmarks/localization/lidar_localization_replay_001/baselines/ndt_baseline/report.html",
+          "run_id": "baseline_lidar_localization_replay_001_ndt_baseline_real",
+          "source": "baseline",
+          "status": "completed",
+          "task": "localization"
+        }
+      ],
+      "runner": "rosbag_replay",
+      "task": "localization"
+    },
+    {
+      "benchmark": "static_obstacle_lidar_001",
+      "columns": [
+        "obstacle_detected",
+        "no_large_false_positive_in_drivable_area",
+        "detection_latency_ms",
+        "missed_detection_count",
+        "play_returncode",
+        "play_elapsed_sec",
+        "rosbag_message_count"
+      ],
+      "entries": [
+        {
+          "baseline_status": "real",
+          "benchmark": "static_obstacle_lidar_001",
+          "experiment": "lidar_cluster_baseline",
+          "failures": [],
+          "metrics": {
+            "detection_latency_ms": null,
+            "missed_detection_count": null,
+            "no_large_false_positive_in_drivable_area": null,
+            "obstacle_detected": null,
+            "play_elapsed_sec": 1.449,
+            "play_returncode": 0,
+            "play_timed_out": false,
+            "rosbag_duration_sec": 0.9,
+            "rosbag_message_count": 10,
+            "rosbag_topic_count": 1
+          },
+          "record_link": "benchmarks/perception/static_obstacle_lidar_001/baselines/lidar_cluster_baseline/result.json",
+          "report_link": "benchmarks/perception/static_obstacle_lidar_001/baselines/lidar_cluster_baseline/report.html",
+          "run_id": "baseline_static_obstacle_lidar_001_lidar_cluster_baseline_real",
+          "source": "baseline",
+          "status": "completed",
+          "task": "perception"
+        }
+      ],
+      "runner": "rosbag_replay",
+      "task": "perception"
+    },
+    {
+      "benchmark": "lane_change_cut_in_001",
+      "columns": [
+        "no_collision",
+        "route_completion",
+        "min_ttc_sec",
+        "max_jerk_mps3",
+        "planner_oscillation",
+        "play_returncode",
+        "play_elapsed_sec",
+        "rosbag_message_count"
+      ],
+      "entries": [
+        {
+          "baseline_status": "dry_run",
+          "benchmark": "lane_change_cut_in_001",
+          "experiment": "autoware_baseline",
+          "failures": [
+            "sim_invalid"
+          ],
+          "metrics": {
+            "dry_run": true
+          },
+          "record_link": "benchmarks/planning/lane_change_cut_in_001/baselines/autoware_baseline/result.json",
+          "report_link": "benchmarks/planning/lane_change_cut_in_001/baselines/autoware_baseline/report.html",
+          "run_id": "baseline_lane_change_cut_in_001_dry_run",
+          "source": "baseline",
+          "status": "not_executed",
+          "task": "planning"
+        },
+        {
+          "baseline_status": null,
+          "benchmark": "lane_change_cut_in_001",
+          "experiment": "safe_gap_ttc_planner",
+          "failures": [],
+          "metrics": {},
+          "record_link": null,
+          "report_link": null,
+          "run_id": null,
+          "source": "missing",
+          "status": null,
+          "task": "planning"
+        }
+      ],
+      "runner": "scenario_simulator_v2",
+      "task": "planning"
+    },
+    {
+      "benchmark": "cut_in_prediction_001",
+      "columns": [
+        "prediction_topic_available",
+        "minADE",
+        "minFDE",
+        "play_returncode",
+        "play_elapsed_sec",
+        "rosbag_message_count"
+      ],
+      "entries": [
+        {
+          "baseline_status": "dry_run",
+          "benchmark": "cut_in_prediction_001",
+          "experiment": "constant_velocity_baseline",
+          "failures": [
+            "sim_invalid"
+          ],
+          "metrics": {
+            "dry_run": true
+          },
+          "record_link": "benchmarks/prediction/cut_in_prediction_001/baselines/constant_velocity_baseline/result.json",
+          "report_link": "benchmarks/prediction/cut_in_prediction_001/baselines/constant_velocity_baseline/report.html",
+          "run_id": "baseline_cut_in_prediction_001_dry_run",
+          "source": "baseline",
+          "status": "not_executed",
+          "task": "prediction"
+        }
+      ],
+      "runner": "scenario_simulator_v2",
+      "task": "prediction"
+    }
+  ],
+  "columns": [
+    "pose_output_available",
+    "no_localization_lost",
+    "convergence_time_sec",
+    "pose_jump_count",
+    "play_returncode",
+    "play_elapsed_sec",
+    "rosbag_message_count",
+    "obstacle_detected",
+    "no_large_false_positive_in_drivable_area",
+    "detection_latency_ms",
+    "missed_detection_count",
+    "no_collision",
+    "route_completion",
+    "min_ttc_sec",
+    "max_jerk_mps3",
+    "planner_oscillation",
+    "prediction_topic_available",
+    "minADE",
+    "minFDE"
+  ],
+  "entries": [
+    {
+      "baseline_status": "real",
+      "benchmark": "lidar_localization_replay_001",
+      "experiment": "icp_registration_toy",
+      "failures": [],
+      "metrics": {
+        "convergence_time_sec": null,
+        "no_localization_lost": null,
+        "play_elapsed_sec": 1.451,
+        "play_returncode": 0,
+        "play_timed_out": false,
+        "pose_jump_count": null,
+        "pose_output_available": null,
+        "rosbag_duration_sec": 0.9,
+        "rosbag_message_count": 10,
+        "rosbag_topic_count": 1
+      },
+      "record_link": "reports/run_snapshots/20260523T031903746702Z_lidar_localization_replay_001_icp_registration_toy_real/result.json",
+      "report_link": "reports/run_snapshots/20260523T031903746702Z_lidar_localization_replay_001_icp_registration_toy_real/report.html",
+      "run_id": "20260523T031903746702Z_lidar_localization_replay_001_icp_registration_toy_real",
+      "source": "snapshot",
+      "status": "completed",
+      "task": "localization"
+    },
+    {
+      "baseline_status": "real",
+      "benchmark": "lidar_localization_replay_001",
+      "experiment": "ndt_baseline",
+      "failures": [],
+      "metrics": {
+        "convergence_time_sec": null,
+        "no_localization_lost": null,
+        "play_elapsed_sec": 1.457,
+        "play_returncode": 0,
+        "play_timed_out": false,
+        "pose_jump_count": null,
+        "pose_output_available": null,
+        "rosbag_duration_sec": 0.9,
+        "rosbag_message_count": 10,
+        "rosbag_topic_count": 1
+      },
+      "record_link": "benchmarks/localization/lidar_localization_replay_001/baselines/ndt_baseline/result.json",
+      "report_link": "benchmarks/localization/lidar_localization_replay_001/baselines/ndt_baseline/report.html",
+      "run_id": "baseline_lidar_localization_replay_001_ndt_baseline_real",
+      "source": "baseline",
+      "status": "completed",
+      "task": "localization"
+    },
+    {
+      "baseline_status": "real",
+      "benchmark": "static_obstacle_lidar_001",
+      "experiment": "lidar_cluster_baseline",
+      "failures": [],
+      "metrics": {
+        "detection_latency_ms": null,
+        "missed_detection_count": null,
+        "no_large_false_positive_in_drivable_area": null,
+        "obstacle_detected": null,
+        "play_elapsed_sec": 1.449,
+        "play_returncode": 0,
+        "play_timed_out": false,
+        "rosbag_duration_sec": 0.9,
+        "rosbag_message_count": 10,
+        "rosbag_topic_count": 1
+      },
+      "record_link": "benchmarks/perception/static_obstacle_lidar_001/baselines/lidar_cluster_baseline/result.json",
+      "report_link": "benchmarks/perception/static_obstacle_lidar_001/baselines/lidar_cluster_baseline/report.html",
+      "run_id": "baseline_static_obstacle_lidar_001_lidar_cluster_baseline_real",
+      "source": "baseline",
+      "status": "completed",
+      "task": "perception"
+    },
+    {
+      "baseline_status": "dry_run",
+      "benchmark": "lane_change_cut_in_001",
+      "experiment": "autoware_baseline",
+      "failures": [
+        "sim_invalid"
+      ],
+      "metrics": {
+        "dry_run": true
+      },
+      "record_link": "benchmarks/planning/lane_change_cut_in_001/baselines/autoware_baseline/result.json",
+      "report_link": "benchmarks/planning/lane_change_cut_in_001/baselines/autoware_baseline/report.html",
+      "run_id": "baseline_lane_change_cut_in_001_dry_run",
+      "source": "baseline",
+      "status": "not_executed",
+      "task": "planning"
+    },
+    {
+      "baseline_status": null,
+      "benchmark": "lane_change_cut_in_001",
+      "experiment": "safe_gap_ttc_planner",
+      "failures": [],
+      "metrics": {},
+      "record_link": null,
+      "report_link": null,
+      "run_id": null,
+      "source": "missing",
+      "status": null,
+      "task": "planning"
+    },
+    {
+      "baseline_status": "dry_run",
+      "benchmark": "cut_in_prediction_001",
+      "experiment": "constant_velocity_baseline",
+      "failures": [
+        "sim_invalid"
+      ],
+      "metrics": {
+        "dry_run": true
+      },
+      "record_link": "benchmarks/prediction/cut_in_prediction_001/baselines/constant_velocity_baseline/result.json",
+      "report_link": "benchmarks/prediction/cut_in_prediction_001/baselines/constant_velocity_baseline/report.html",
+      "run_id": "baseline_cut_in_prediction_001_dry_run",
+      "source": "baseline",
+      "status": "not_executed",
+      "task": "prediction"
+    }
+  ]
+}

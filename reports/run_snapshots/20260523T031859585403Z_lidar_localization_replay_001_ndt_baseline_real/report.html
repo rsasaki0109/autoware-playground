@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>APG Run Report - 20260523T031859585403Z_lidar_localization_replay_001_ndt_baseline_real</title>
+  <style>
+    body {
+      color: #172026;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+      margin: 0;
+      background: #f7f8f8;
+    }
+    main {
+      margin: 0 auto;
+      max-width: 980px;
+      padding: 32px 20px 56px;
+    }
+    h1, h2 {
+      line-height: 1.2;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid #d8dedc;
+      margin-bottom: 24px;
+    }
+    th, td {
+      border-bottom: 1px solid #e6ebe9;
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      width: 260px;
+      background: #eef2f1;
+    }
+    code {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .status {
+      display: inline-block;
+      border: 1px solid #aab6b3;
+      border-radius: 4px;
+      padding: 2px 8px;
+      background: #ffffff;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>APG Run Report</h1>
+  <p><span class="status">completed</span></p>
+
+  <h2>Run</h2>
+  <table>
+    <tr><th>Run ID</th><td>20260523T031859585403Z_lidar_localization_replay_001_ndt_baseline_real</td></tr>
+    <tr><th>Experiment</th><td>ndt_baseline</td></tr>
+    <tr><th>Benchmark</th><td>lidar_localization_replay_001</td></tr>
+    <tr><th>Mode</th><td>offline_replay</td></tr>
+    <tr><th>Failures</th><td>None</td></tr>
+  </table>
+
+  <h2>Metrics</h2>
+  <table>
+    <tr><th>convergence_time_sec</th><td><code>null</code></td></tr>
+<tr><th>no_localization_lost</th><td><code>null</code></td></tr>
+<tr><th>play_elapsed_sec</th><td><code>1.458</code></td></tr>
+<tr><th>play_returncode</th><td><code>0</code></td></tr>
+<tr><th>play_timed_out</th><td><code>false</code></td></tr>
+<tr><th>pose_jump_count</th><td><code>null</code></td></tr>
+<tr><th>pose_output_available</th><td><code>null</code></td></tr>
+<tr><th>rosbag_duration_sec</th><td><code>0.9</code></td></tr>
+<tr><th>rosbag_message_count</th><td><code>10</code></td></tr>
+<tr><th>rosbag_topic_count</th><td><code>1</code></td></tr>
+  </table>
+
+  <h2>Assets</h2>
+  <table>
+    <tr><th>map_sha256</th><td><code>&quot;0000000000000000000000000000000000000000000000000000000000000000&quot;</code></td></tr>
+<tr><th>rosbag_sha256</th><td><code>&quot;1111111111111111111111111111111111111111111111111111111111111111&quot;</code></td></tr>
+  </table>
+
+  <h2>Runtime</h2>
+  <table>
+    <tr><th>container_digest</th><td><code>null</code></td></tr>
+<tr><th>headless</th><td><code>true</code></td></tr>
+<tr><th>preflight</th><td><code>{&quot;checks&quot;: [{&quot;detail&quot;: &quot;jazzy&quot;, &quot;name&quot;: &quot;ROS_DISTRO&quot;, &quot;ok&quot;: true}, {&quot;detail&quot;: &quot;/opt/ros/jazzy/bin/ros2&quot;, &quot;name&quot;: &quot;ros2&quot;, &quot;ok&quot;: true}], &quot;ok&quot;: true, &quot;runner&quot;: &quot;rosbag_replay&quot;}</code></td></tr>
+<tr><th>ros_distro</th><td><code>&quot;jazzy&quot;</code></td></tr>
+<tr><th>runner</th><td><code>&quot;rosbag_replay&quot;</code></td></tr>
+<tr><th>runner_hints</th><td><code>{&quot;backend&quot;: &quot;rosbag_replay&quot;, &quot;dispatched&quot;: true, &quot;executed&quot;: true, &quot;experiment_mode&quot;: &quot;offline_replay&quot;, &quot;headless&quot;: true, &quot;play_stderr_tail&quot;: &quot;38.451755880] [rosbag2_player]: Press SPACE for Pause/Resume\n[INFO] [1779506338.451761619] [rosbag2_player]: Press CURSOR_RIGHT for Play Next Message\n[INFO] [1779506338.451766747] [rosbag2_player]: Press CURSOR_UP for Increase Rate 10%\n[INFO] [1779506338.451773497] [rosbag2_player]: Press CURSOR_DOWN for Decrease Rate 10%\n[INFO] [1779506338.453022884] [rosbag2_player]: Playback until timestamp: -1&quot;, &quot;rosbag&quot;: &quot;/tmp/apg_data/rosbags/sample_lidar_localization_bag&quot;, &quot;seed&quot;: null, &quot;timeout_sec&quot;: 120}</code></td></tr>
+  </table>
+
+  <h2>Failure Cards</h2>
+  <table>
+    <tr><td colspan="2">None</td></tr>
+  </table>
+
+  <h2>Reproduce</h2>
+  <table>
+    <tr><th>Command</th><td><code>apg run benchmarks/localization/lidar_localization_replay_001 --experiment experiments/localization/ndt_baseline --headless --report</code></td></tr>
+  </table>
+</main>
+</body>
+</html>

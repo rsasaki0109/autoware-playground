@@ -1,0 +1,75 @@
+{
+  "api_version": "apg/v0",
+  "artifacts": {
+    "failure_cards": null,
+    "plots": null,
+    "report": "report.html",
+    "rosbag": "/tmp/apg_data/rosbags/sample_lidar_localization_bag"
+  },
+  "assets": {
+    "map_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "rosbag_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "benchmark": "lidar_localization_replay_001",
+  "execution": {
+    "baseline_status": "real",
+    "dry_run": false,
+    "seed": 42,
+    "status": "completed"
+  },
+  "experiment": "icp_registration_toy",
+  "failures": [],
+  "git": {
+    "autoware_playground": "38de061",
+    "autoware_universe": null
+  },
+  "kind": "RunRecord",
+  "metrics": {
+    "convergence_time_sec": null,
+    "no_localization_lost": null,
+    "play_elapsed_sec": 1.451,
+    "play_returncode": 0,
+    "play_timed_out": false,
+    "pose_jump_count": null,
+    "pose_output_available": null,
+    "rosbag_duration_sec": 0.9,
+    "rosbag_message_count": 10,
+    "rosbag_topic_count": 1
+  },
+  "mode": "offline_replay",
+  "reproduce": "apg run benchmarks/localization/lidar_localization_replay_001 --experiment experiments/localization/icp_registration_toy --headless --report",
+  "run_id": "20260523T031903746702Z_lidar_localization_replay_001_icp_registration_toy_real",
+  "runtime": {
+    "container_digest": null,
+    "headless": true,
+    "preflight": {
+      "checks": [
+        {
+          "detail": "jazzy",
+          "name": "ROS_DISTRO",
+          "ok": true
+        },
+        {
+          "detail": "/opt/ros/jazzy/bin/ros2",
+          "name": "ros2",
+          "ok": true
+        }
+      ],
+      "ok": true,
+      "runner": "rosbag_replay"
+    },
+    "ros_distro": "jazzy",
+    "runner": "rosbag_replay",
+    "runner_hints": {
+      "backend": "rosbag_replay",
+      "dispatched": true,
+      "executed": true,
+      "experiment_mode": "offline_replay",
+      "headless": true,
+      "play_stderr_tail": "42.614373447] [rosbag2_player]: Press SPACE for Pause/Resume\n[INFO] [1779506342.614381650] [rosbag2_player]: Press CURSOR_RIGHT for Play Next Message\n[INFO] [1779506342.614389401] [rosbag2_player]: Press CURSOR_UP for Increase Rate 10%\n[INFO] [1779506342.614400498] [rosbag2_player]: Press CURSOR_DOWN for Decrease Rate 10%\n[INFO] [1779506342.615599625] [rosbag2_player]: Playback until timestamp: -1",
+      "rosbag": "/tmp/apg_data/rosbags/sample_lidar_localization_bag",
+      "seed": null,
+      "timeout_sec": 120
+    }
+  }
+}
