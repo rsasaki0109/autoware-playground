@@ -20,7 +20,7 @@
           "metrics": {
             "convergence_time_sec": null,
             "no_localization_lost": null,
-            "play_elapsed_sec": 1.451,
+            "play_elapsed_sec": 1.457,
             "play_returncode": 0,
             "play_timed_out": false,
             "pose_jump_count": null,
@@ -29,9 +29,9 @@
             "rosbag_message_count": 10,
             "rosbag_topic_count": 1
           },
-          "record_link": "reports/run_snapshots/20260523T031903746702Z_lidar_localization_replay_001_icp_registration_toy_real/result.json",
-          "report_link": "reports/run_snapshots/20260523T031903746702Z_lidar_localization_replay_001_icp_registration_toy_real/report.html",
-          "run_id": "20260523T031903746702Z_lidar_localization_replay_001_icp_registration_toy_real",
+          "record_link": "reports/run_snapshots/20260523T052204389668Z_lidar_localization_replay_001_icp_registration_toy_real/result.json",
+          "report_link": "reports/run_snapshots/20260523T052204389668Z_lidar_localization_replay_001_icp_registration_toy_real/report.html",
+          "run_id": "20260523T052204389668Z_lidar_localization_replay_001_icp_registration_toy_real",
           "source": "snapshot",
           "status": "completed",
           "task": "localization"
@@ -214,7 +214,7 @@
       "metrics": {
         "convergence_time_sec": null,
         "no_localization_lost": null,
-        "play_elapsed_sec": 1.451,
+        "play_elapsed_sec": 1.457,
         "play_returncode": 0,
         "play_timed_out": false,
         "pose_jump_count": null,
@@ -223,9 +223,9 @@
         "rosbag_message_count": 10,
         "rosbag_topic_count": 1
       },
-      "record_link": "reports/run_snapshots/20260523T031903746702Z_lidar_localization_replay_001_icp_registration_toy_real/result.json",
-      "report_link": "reports/run_snapshots/20260523T031903746702Z_lidar_localization_replay_001_icp_registration_toy_real/report.html",
-      "run_id": "20260523T031903746702Z_lidar_localization_replay_001_icp_registration_toy_real",
+      "record_link": "reports/run_snapshots/20260523T052204389668Z_lidar_localization_replay_001_icp_registration_toy_real/result.json",
+      "report_link": "reports/run_snapshots/20260523T052204389668Z_lidar_localization_replay_001_icp_registration_toy_real/report.html",
+      "run_id": "20260523T052204389668Z_lidar_localization_replay_001_icp_registration_toy_real",
       "source": "snapshot",
       "status": "completed",
       "task": "localization"
