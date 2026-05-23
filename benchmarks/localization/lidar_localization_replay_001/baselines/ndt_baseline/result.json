@@ -33,7 +33,7 @@
     "pose_jump_count": null,
     "pose_output_available": null,
     "rosbag_duration_sec": 0.9,
-    "rosbag_message_count": 10,
+    "rosbag_message_count": 5,
     "rosbag_topic_count": 1
   },
   "mode": "offline_replay",
