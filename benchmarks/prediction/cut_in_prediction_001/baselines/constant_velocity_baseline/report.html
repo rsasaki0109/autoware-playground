@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>APG Run Report - baseline_cut_in_prediction_001_dry_run</title>
+  <style>
+    body {
+      color: #172026;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+      margin: 0;
+      background: #f7f8f8;
+    }
+    main {
+      margin: 0 auto;
+      max-width: 980px;
+      padding: 32px 20px 56px;
+    }
+    h1, h2 {
+      line-height: 1.2;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid #d8dedc;
+      margin-bottom: 24px;
+    }
+    th, td {
+      border-bottom: 1px solid #e6ebe9;
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      width: 260px;
+      background: #eef2f1;
+    }
+    code {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .status {
+      display: inline-block;
+      border: 1px solid #aab6b3;
+      border-radius: 4px;
+      padding: 2px 8px;
+      background: #ffffff;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>APG Run Report</h1>
+  <p><span class="status">not_executed</span></p>
+
+  <h2>Run</h2>
+  <table>
+    <tr><th>Run ID</th><td>baseline_cut_in_prediction_001_dry_run</td></tr>
+    <tr><th>Experiment</th><td>constant_velocity_baseline</td></tr>
+    <tr><th>Benchmark</th><td>cut_in_prediction_001</td></tr>
+    <tr><th>Mode</th><td>shadow</td></tr>
+    <tr><th>Failures</th><td>sim_invalid</td></tr>
+  </table>
+
+  <h2>Metrics</h2>
+  <table>
+    <tr><th>dry_run</th><td><code>true</code></td></tr>
+  </table>
+
+  <h2>Assets</h2>
+  <table>
+    <tr><th>map_sha256</th><td><code>&quot;0000000000000000000000000000000000000000000000000000000000000000&quot;</code></td></tr>
+<tr><th>scenario_sha256</th><td><code>&quot;2222222222222222222222222222222222222222222222222222222222222222&quot;</code></td></tr>
+  </table>
+
+  <h2>Runtime</h2>
+  <table>
+    <tr><th>container_digest</th><td><code>null</code></td></tr>
+<tr><th>ros_distro</th><td><code>&quot;not_executed&quot;</code></td></tr>
+  </table>
+
+  <h2>Failure Cards</h2>
+  <table>
+    <tr><td colspan="2">None</td></tr>
+  </table>
+
+  <h2>Reproduce</h2>
+  <table>
+    <tr><th>Command</th><td><code>apg run benchmarks/prediction/cut_in_prediction_001 --experiment experiments/prediction/constant_velocity_baseline --dry-run</code></td></tr>
+  </table>
+</main>
+</body>
+</html>

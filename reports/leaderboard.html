@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>autoware-playground leaderboard</title>
+  <style>
+body {
+  color: #172026;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  margin: 0;
+  background: #f7f8f8;
+}
+main {
+  margin: 0 auto;
+  max-width: 1080px;
+  padding: 32px 20px 56px;
+}
+h1, h2 {
+  line-height: 1.2;
+}
+h2 {
+  margin-top: 32px;
+  border-bottom: 1px solid #d8dedc;
+  padding-bottom: 4px;
+}
+.runner-tag {
+  display: inline-block;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.85em;
+  background: #eef2f1;
+  border: 1px solid #d8dedc;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 8px;
+  color: #46545d;
+}
+.task-tag {
+  font-weight: normal;
+  color: #46545d;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #d8dedc;
+  margin-bottom: 8px;
+  font-size: 0.95em;
+}
+th, td {
+  border-bottom: 1px solid #e6ebe9;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+thead th {
+  background: #eef2f1;
+  white-space: nowrap;
+}
+td.failures {
+  color: #b03434;
+}
+td.value {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  white-space: nowrap;
+}
+.source-baseline { color: #46545d; }
+.source-runs { color: #2c6e49; }
+.source-missing { color: #b03434; }
+a { color: #1f5fa3; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.meta { color: #46545d; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>autoware-playground leaderboard</h1>
+  <p class="meta">Each row links to its <code>report.html</code> (or <code>result.json</code> if no report has been generated yet).</p>
+<h2>lidar_localization_replay_001 <span class="task-tag">(localization)</span><span class="runner-tag">rosbag_replay</span></h2>
+<table>
+<thead><tr><th>experiment</th><th>source</th><th>baseline_status</th><th>status</th><th>pose_output_available</th><th>no_localization_lost</th><th>convergence_time_sec</th><th>pose_jump_count</th><th>play_returncode</th><th>play_elapsed_sec</th><th>rosbag_message_count</th><th>failures</th></tr></thead>
+<tbody>
+<tr><td><a href="../runs/20260523T025246520061Z_lidar_localization_replay_001_icp_registration_toy_real/report.html">icp_registration_toy</a></td><td class="source-runs">runs</td><td>real</td><td>completed</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">0</td><td class="value">1.450</td><td class="value">10</td><td class="">—</td></tr>
+<tr><td><a href="../benchmarks/localization/lidar_localization_replay_001/baselines/ndt_baseline/report.html">ndt_baseline</a></td><td class="source-baseline">baseline</td><td>real</td><td>completed</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">0</td><td class="value">1.457</td><td class="value">10</td><td class="">—</td></tr>
+</tbody>
+</table>
+<h2>static_obstacle_lidar_001 <span class="task-tag">(perception)</span><span class="runner-tag">rosbag_replay</span></h2>
+<table>
+<thead><tr><th>experiment</th><th>source</th><th>baseline_status</th><th>status</th><th>obstacle_detected</th><th>no_large_false_positive_in_drivable_area</th><th>detection_latency_ms</th><th>missed_detection_count</th><th>play_returncode</th><th>play_elapsed_sec</th><th>rosbag_message_count</th><th>failures</th></tr></thead>
+<tbody>
+<tr><td><a href="../benchmarks/perception/static_obstacle_lidar_001/baselines/lidar_cluster_baseline/report.html">lidar_cluster_baseline</a></td><td class="source-baseline">baseline</td><td>real</td><td>completed</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">0</td><td class="value">1.449</td><td class="value">10</td><td class="">—</td></tr>
+</tbody>
+</table>
+<h2>lane_change_cut_in_001 <span class="task-tag">(planning)</span><span class="runner-tag">scenario_simulator_v2</span></h2>
+<table>
+<thead><tr><th>experiment</th><th>source</th><th>baseline_status</th><th>status</th><th>no_collision</th><th>route_completion</th><th>min_ttc_sec</th><th>max_jerk_mps3</th><th>planner_oscillation</th><th>play_returncode</th><th>play_elapsed_sec</th><th>rosbag_message_count</th><th>failures</th></tr></thead>
+<tbody>
+<tr><td><a href="../benchmarks/planning/lane_change_cut_in_001/baselines/autoware_baseline/report.html">autoware_baseline</a></td><td class="source-baseline">baseline</td><td>dry_run</td><td>not_executed</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="failures">sim_invalid</td></tr>
+<tr><td>safe_gap_ttc_planner</td><td class="source-missing">missing</td><td>—</td><td>—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="">—</td></tr>
+</tbody>
+</table>
+<h2>cut_in_prediction_001 <span class="task-tag">(prediction)</span><span class="runner-tag">scenario_simulator_v2</span></h2>
+<table>
+<thead><tr><th>experiment</th><th>source</th><th>baseline_status</th><th>status</th><th>prediction_topic_available</th><th>minADE</th><th>minFDE</th><th>play_returncode</th><th>play_elapsed_sec</th><th>rosbag_message_count</th><th>failures</th></tr></thead>
+<tbody>
+<tr><td><a href="../benchmarks/prediction/cut_in_prediction_001/baselines/constant_velocity_baseline/report.html">constant_velocity_baseline</a></td><td class="source-baseline">baseline</td><td>dry_run</td><td>not_executed</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="value">—</td><td class="failures">sim_invalid</td></tr>
+</tbody>
+</table>
+</main>
+</body>
+</html>
