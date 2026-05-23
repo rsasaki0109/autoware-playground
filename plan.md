@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-23 after the fourteenth MVP implementation pass (leaderboard rendering rewritten as one block per benchmark: each block has its own short metric column list scoped to that benchmark's gates + a handful of generic execution metrics, so planning columns no longer leak into localization rows. `apg leaderboard --format markdown` now emits `## benchmark (task) — runner` headers; JSON output exposes `blocks` alongside the flat `entries` / `columns` for compatibility).
+Updated on 2026-05-23 after the fifteenth MVP implementation pass (HTML leaderboard: `apg leaderboard --format html [--link-base ..]` renders a styled page with one block per benchmark and per-row hyperlinks to `report.html` / `result.json`. CI now passes `--report` to the real `rosbag_replay` matrix step, regenerates `report.html` for every committed baseline, and on main push commits both `reports/leaderboard.html` and the baseline `report.html` files so links resolve in-tree).
 
 The remaining stretch goal toward a leaderboard:
 
@@ -1683,6 +1683,22 @@ Resume from here:
       `entries` / `columns` arrays for back-compat. This kills the
       27-wide horizontal table that used to leak planning columns
       into localization rows.
+    - fifteenth pass: `apg leaderboard --format html` added. Each
+      `LeaderboardEntry` now carries a `record_link` (always the
+      result.json) and a `report_link` (the sibling `report.html`
+      when present), both as repo-relative POSIX paths.
+      `apg leaderboard --format html [--link-base ..]` renders a
+      styled HTML page (same CSS family as `report.html`) with one
+      block per benchmark and each `experiment` cell hyperlinked to
+      the best available pointer. The CI `leaderboard` job now:
+      passes `--report` to the real `rosbag_replay` matrix step so
+      runs ship their `report.html`; regenerates `report.html` for
+      every committed baseline before rendering; emits
+      `leaderboard.html` alongside `leaderboard.{md,json,txt}` as
+      part of the `apg-leaderboard` artifact; and on main push
+      commits `reports/leaderboard.html` and every
+      `benchmarks/*/*/baselines/*/report.html` so the links resolve
+      in-tree.
 
 ## 28. Implementation Notes For Next Session
 

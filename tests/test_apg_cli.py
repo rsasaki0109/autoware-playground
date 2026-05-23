@@ -574,6 +574,100 @@ def test_leaderboard_emit_helper(tmp_path):
     assert "===" in text
 
 
+def test_leaderboard_entry_links_to_record(tmp_path):
+    board = build_leaderboard(ROOT)
+    by_key = {(e.benchmark, e.experiment): e for e in board.entries}
+    # ndt_baseline is a committed baseline; record_link must point to its result.json
+    ndt = by_key[("lidar_localization_replay_001", "ndt_baseline")]
+    assert ndt.record_link == (
+        "benchmarks/localization/lidar_localization_replay_001"
+        "/baselines/ndt_baseline/result.json"
+    )
+    # A missing row has no record_link.
+    safe = by_key[("lane_change_cut_in_001", "safe_gap_ttc_planner")]
+    assert safe.record_link is None
+    assert safe.report_link is None
+
+
+def test_leaderboard_html_renders_per_benchmark_headers(monkeypatch, capsys):
+    monkeypatch.chdir(ROOT)
+    assert main(["leaderboard", "--format", "html"]) == 0
+    out = capsys.readouterr().out
+    assert out.startswith("<!doctype html>")
+    assert "<title>autoware-playground leaderboard</title>" in out
+    assert "lidar_localization_replay_001" in out
+    assert "lane_change_cut_in_001" in out
+    # Runner tag rendered for rosbag_replay benchmarks
+    assert "rosbag_replay" in out
+    # Localization gate column header is present
+    assert "pose_output_available" in out
+
+
+def test_leaderboard_html_link_base_prefixes_links(monkeypatch, capsys):
+    monkeypatch.chdir(ROOT)
+    assert main(["leaderboard", "--format", "html", "--link-base", ".."]) == 0
+    out = capsys.readouterr().out
+    # ndt_baseline result.json must be reachable via the link_base prefix
+    expected = (
+        '<a href="../benchmarks/localization/lidar_localization_replay_001'
+        '/baselines/ndt_baseline/result.json">ndt_baseline</a>'
+    )
+    assert expected in out
+
+
+def test_leaderboard_html_marks_missing_rows_without_link(monkeypatch, capsys):
+    monkeypatch.chdir(ROOT)
+    assert main(["leaderboard", "--format", "html"]) == 0
+    out = capsys.readouterr().out
+    # safe_gap_ttc_planner has no record so the experiment cell is plain text,
+    # not an anchor.
+    assert "<td>safe_gap_ttc_planner</td>" in out
+
+
+def test_leaderboard_html_uses_report_link_when_available(tmp_path):
+    # Build a fake repo with a baseline result.json plus a sibling report.html
+    # and verify the entry surfaces report_link, not just record_link.
+    repo = tmp_path / "repo"
+    bench_dir = repo / "benchmarks" / "fake" / "fake_bench_001"
+    baseline_dir = bench_dir / "baselines" / "fake_baseline"
+    baseline_dir.mkdir(parents=True)
+    (bench_dir / "benchmark.yaml").write_text(
+        "api_version: apg/v0\nkind: Benchmark\nname: fake_bench_001\ntask: fake\n"
+        "runner:\n  type: rosbag_replay\n"
+        "gates:\n  required: []\n  diagnostic: []\n",
+        encoding="utf-8",
+    )
+    (repo / "experiments" / "fake" / "fake_baseline").mkdir(parents=True)
+    (repo / "experiments" / "fake" / "fake_baseline" / "experiment.yaml").write_text(
+        "api_version: apg/v0\nkind: Experiment\nname: fake_baseline\ntask: fake\n"
+        "mode: shadow\nbenchmarks:\n  smoke:\n    - benchmarks/fake/fake_bench_001\n",
+        encoding="utf-8",
+    )
+    (baseline_dir / "result.json").write_text(
+        json.dumps(
+            {
+                "api_version": "apg/v0",
+                "kind": "RunRecord",
+                "run_id": "fake_run_001",
+                "experiment": "fake_baseline",
+                "benchmark": "fake_bench_001",
+                "execution": {"baseline_status": "real", "status": "completed", "dry_run": False},
+                "metrics": {},
+                "failures": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (baseline_dir / "report.html").write_text("<html></html>", encoding="utf-8")
+    board = build_leaderboard(repo)
+    entry = next(
+        e for e in board.entries if e.experiment == "fake_baseline"
+    )
+    assert entry.report_link == (
+        "benchmarks/fake/fake_bench_001/baselines/fake_baseline/report.html"
+    )
+
+
 def test_failure_card_schema_validates(tmp_path):
     card = {
         "api_version": "apg/v0",

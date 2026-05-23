@@ -152,7 +152,7 @@ def cmd_preflight(args: argparse.Namespace) -> int:
 
 def cmd_leaderboard(args: argparse.Namespace) -> int:
     root = find_repo_root(Path.cwd())
-    output = emit_leaderboard(root, fmt=args.format)
+    output = emit_leaderboard(root, fmt=args.format, link_base=args.link_base)
     print(output, end="")
     return 0
 
@@ -265,9 +265,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     leaderboard.add_argument(
         "--format",
-        choices=["text", "markdown", "json"],
+        choices=["text", "markdown", "json", "html"],
         default="text",
         help="Output format (default: text).",
+    )
+    leaderboard.add_argument(
+        "--link-base",
+        default=".",
+        help=(
+            "Prefix prepended to report.html / result.json links in html output."
+            " Use '..' when writing the page to reports/leaderboard.html so that"
+            " links escape that directory and reach files at the repo root."
+        ),
     )
     leaderboard.set_defaults(func=cmd_leaderboard)
 
