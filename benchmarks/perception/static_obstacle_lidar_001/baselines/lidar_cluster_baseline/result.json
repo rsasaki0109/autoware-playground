@@ -33,7 +33,7 @@
     "play_returncode": 0,
     "play_timed_out": false,
     "rosbag_duration_sec": 0.9,
-    "rosbag_message_count": 10,
+    "rosbag_message_count": 7,
     "rosbag_topic_count": 1
   },
   "mode": "shadow",
