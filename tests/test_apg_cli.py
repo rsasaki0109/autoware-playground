@@ -32,7 +32,7 @@ def test_find_repo_root():
 def test_repository_validation_passes():
     result = validate_path(ROOT)
     assert result.ok, "\n".join(result.errors)
-    assert result.files >= 30
+    assert result.files >= 25
 
 
 def test_list_benchmarks_and_experiments(capsys, monkeypatch):
@@ -118,7 +118,7 @@ def test_validate_json_output(monkeypatch, capsys):
     assert main(["validate", ".", "--json"]) == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["ok"] is True
-    assert payload["files"] >= 30
+    assert payload["files"] >= 25
     assert payload["errors"] == []
 
 

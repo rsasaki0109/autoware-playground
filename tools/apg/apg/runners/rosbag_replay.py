@@ -124,9 +124,12 @@ def execute(
     headless: bool,
     seed: int | None,
 ) -> RunnerOutcome:
+    # Validate user-controlled inputs (env vars, paths) before checking for
+    # ros2 on PATH so the resulting error points at the actual fix the user
+    # needs to apply, not at the environment.
+    bag = _resolve_rosbag(benchmark)
     if not shutil.which("ros2"):
         raise ApgRunnerError("rosbag_replay: `ros2` not on PATH")
-    bag = _resolve_rosbag(benchmark)
     runner_cfg = benchmark.get("runner", {}) or {}
     timeout_sec = runner_cfg.get("timeout_sec")
 
