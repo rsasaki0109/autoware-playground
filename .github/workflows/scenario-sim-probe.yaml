@@ -1,0 +1,109 @@
+name: scenario-sim-probe
+
+# Pull the official scenario_simulator_v2 Docker image and prove end-to-end
+# that scenario_test_runner can interpret an OpenSCENARIO file. This is the
+# first step toward promoting the planning and prediction baselines from
+# dry-run to real (see plan.md §27 item 20).
+#
+# Triggered manually or only when scenario_simulator_v2 plumbing changes —
+# the image is ~10 GB, too expensive to pull on every PR.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "tools/apg/apg/runners/scenario_simulator_v2.py"
+      - ".github/workflows/scenario-sim-probe.yaml"
+  pull_request:
+    paths:
+      - "tools/apg/apg/runners/scenario_simulator_v2.py"
+      - ".github/workflows/scenario-sim-probe.yaml"
+  schedule:
+    # Weekly canary so we notice if TIER IV ships a breaking change to the
+    # published image (e.g., workspace path moves, package renames).
+    - cron: "17 4 * * 1"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    # Image pull dominates wall time (~5-10 min on Actions' network).
+    timeout-minutes: 30
+    env:
+      IMAGE: ghcr.io/tier4/scenario_simulator_v2:humble
+      WORKSPACE_SETUP: /home/ubuntu/Desktop/scenario_simulator_ws/install/setup.bash
+      BUNDLED_SCENARIO: /home/ubuntu/Desktop/scenario_simulator_ws/src/scenario_simulator/test_runner/scenario_test_runner/scenario/all-in-one.yaml
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull scenario_simulator_v2 image
+        run: |
+          docker pull "$IMAGE"
+          docker images "$IMAGE" --format '{{.Repository}}:{{.Tag}}  {{.Size}}'
+
+      - name: Verify scenario_test_runner is present
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm "$IMAGE" bash -c "
+            source '$WORKSPACE_SETUP'
+            which scenario_test_runner
+            ros2 pkg list 2>/dev/null \
+              | grep -E '^(scenario_test_runner|openscenario_interpreter|traffic_simulator)$' \
+              | sort
+          "
+
+      - name: Run bundled all-in-one scenario
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm "$IMAGE" bash -c "
+            source '$WORKSPACE_SETUP'
+            cd /tmp
+            timeout 180 ros2 launch scenario_test_runner scenario_test_runner.launch.py \
+              scenario:='$BUNDLED_SCENARIO' \
+              architecture_type:=awf/universe \
+              global_real_time_factor:=2.0 \
+              global_frame_rate:=10.0 2>&1
+          " | tee scenario-sim-probe.log
+          # ANSI color codes wrap "Passed", so anchor on the substring only.
+          if ! grep -q 'simulation.openscenario_interpreter.*Passed' scenario-sim-probe.log; then
+            echo "::error::scenario_test_runner did not report Passed"
+            exit 1
+          fi
+
+      - name: Record probe metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE" 2>/dev/null || echo "")
+          export DIGEST
+          python3 <<'PY' > scenario-sim-probe.json
+          import json, datetime, os
+          payload = {
+              "image": os.environ["IMAGE"],
+              "digest": os.environ.get("DIGEST") or None,
+              "workspace_setup": os.environ["WORKSPACE_SETUP"],
+              "scenario": os.environ["BUNDLED_SCENARIO"],
+              "result": "passed",
+              "probed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              "run_url": f"{os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}",
+          }
+          print(json.dumps(payload, indent=2, sort_keys=True))
+          PY
+          cat scenario-sim-probe.json
+          {
+            echo "## scenario_simulator_v2 probe"
+            echo
+            echo "- Image: \`$IMAGE\`"
+            echo "- Digest: \`${DIGEST:-unresolved}\`"
+            echo "- Result: ✅ \`scenario_test_runner\` ran \`all-in-one.yaml\` to Passed"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload probe report
+        uses: actions/upload-artifact@v4
+        with:
+          name: apg-scenario-sim-probe
+          path: |
+            scenario-sim-probe.log
+            scenario-sim-probe.json

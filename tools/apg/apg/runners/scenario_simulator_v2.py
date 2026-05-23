@@ -52,8 +52,9 @@ def execute(
 ) -> RunnerOutcome:
     raise ApgRunnerError(
         "scenario_simulator_v2 real execution is not connected yet."
-        " Required next steps: launch pinned Autoware (autoware.universe),"
-        " spawn scenario_test_runner with benchmark.autoware.launch and"
-        " benchmark.assets.scenario, then collect metrics into a real"
-        " RunRecord. See plan.md §27 item 5."
+        " The image ghcr.io/tier4/scenario_simulator_v2:humble is verified"
+        " working by .github/workflows/scenario-sim-probe.yaml (bundled"
+        " all-in-one.yaml reaches Passed). Next step: invoke"
+        " scenario_test_runner inside that image with benchmark.assets.scenario"
+        " and collect metrics into a real RunRecord. See plan.md §27 item 20."
     )

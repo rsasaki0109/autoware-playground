@@ -152,7 +152,8 @@ Tip: write the HTML version with `apg leaderboard --format html --link-base .. >
 - ✅ CI-generated leaderboard committed to `reports/leaderboard.{md,html,json}` (HTML rows link to each `report.html`)
 - ✅ PR regression alert: `apg leaderboard-diff` against `main`, surfaced both in the smoke step summary and as a sticky PR comment
 - ✅ Live leaderboard on GitHub Pages (auto-published on every `main` push)
-- 🚧 Real `scenario_simulator_v2` (needs pinned Autoware workspace)
+- ✅ `scenario_simulator_v2` Docker image probe in CI (`ghcr.io/tier4/scenario_simulator_v2:humble` runs `scenario_test_runner` on a bundled OpenSCENARIO to Passed)
+- 🚧 Wire `scenario_simulator_v2.execute()` to dispatch into the probed image
 - 🚧 Promote remaining 2 baselines (planning, prediction) to real
 
 See [`plan.md`](plan.md) for the full design, principles, and roadmap.

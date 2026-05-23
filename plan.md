@@ -1758,6 +1758,26 @@ Resume from here:
       POSTs a new one otherwise. No third-party action dependency.
       The job grew `permissions: pull-requests: write` so the
       `GITHUB_TOKEN` can write comments.
+    - twentieth pass: scenario_simulator_v2 Docker image probe in CI.
+      New workflow `.github/workflows/scenario-sim-probe.yaml` pulls
+      `ghcr.io/tier4/scenario_simulator_v2:humble` (sourced from the
+      image's bundled workspace at
+      `/home/ubuntu/Desktop/scenario_simulator_ws/install/setup.bash`),
+      runs the bundled `scenario/all-in-one.yaml` through
+      `scenario_test_runner`, and gates on
+      `simulation.openscenario_interpreter ... Passed` appearing in the
+      log. The probe records image identity + digest as both an
+      artifact (`apg-scenario-sim-probe`) and a step summary. Triggers
+      are restricted to `workflow_dispatch`, weekly cron, and pushes
+      that touch `scenario_simulator_v2.py` or the workflow itself —
+      the image is ~10 GB so it is too expensive to pull per-PR. The
+      `scenario_simulator_v2.execute()` error message now points at
+      this probe as the known-good baseline rather than telling
+      callers to procure their own Autoware workspace. This is the
+      first step toward promoting the remaining two `dry_run`
+      baselines (planning, prediction) — those promotions wait until
+      a follow-up pass actually dispatches `scenario_test_runner`
+      from inside `apg run`.
 
 ## 28. Implementation Notes For Next Session
 
