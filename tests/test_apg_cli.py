@@ -528,13 +528,31 @@ def test_leaderboard_picks_baseline_and_runs(tmp_path):
     assert "pose_output_available" in board.columns
 
 
-def test_leaderboard_markdown_has_header(monkeypatch, capsys):
+def test_leaderboard_blocks_are_per_benchmark(tmp_path):
+    board = build_leaderboard(ROOT)
+    benchmarks = [block.benchmark for block in board.blocks]
+    assert "lidar_localization_replay_001" in benchmarks
+    assert "static_obstacle_lidar_001" in benchmarks
+    assert "lane_change_cut_in_001" in benchmarks
+    assert "cut_in_prediction_001" in benchmarks
+    # Each block has its own column list scoped to its gates + generic metrics.
+    loc_block = next(b for b in board.blocks if b.benchmark == "lidar_localization_replay_001")
+    assert "pose_output_available" in loc_block.columns  # localization-specific gate
+    assert "no_collision" not in loc_block.columns      # planning-specific gate must not leak
+    assert "play_returncode" in loc_block.columns       # generic execution column
+    assert loc_block.runner == "rosbag_replay"
+
+
+def test_leaderboard_markdown_has_per_benchmark_headers(monkeypatch, capsys):
     monkeypatch.chdir(ROOT)
     assert main(["leaderboard", "--format", "markdown"]) == 0
     out = capsys.readouterr().out
-    assert out.startswith("| benchmark | experiment |")
-    assert "lidar_localization_replay_001" in out
-    assert "ndt_baseline" in out
+    assert "## lidar_localization_replay_001 (localization)" in out
+    assert "## lane_change_cut_in_001 (planning)" in out
+    # planning columns must not appear in the localization block.
+    loc_section = out.split("##")[1]
+    assert "lidar_localization_replay_001" in loc_section
+    assert "no_collision" not in loc_section
 
 
 def test_leaderboard_json_is_parseable(monkeypatch, capsys):
@@ -542,15 +560,18 @@ def test_leaderboard_json_is_parseable(monkeypatch, capsys):
     assert main(["leaderboard", "--format", "json"]) == 0
     payload = json.loads(capsys.readouterr().out)
     assert isinstance(payload, dict)
-    assert "columns" in payload
-    assert "entries" in payload
+    assert "blocks" in payload
+    assert "entries" in payload  # back-compat flat view
     assert len(payload["entries"]) >= 4
+    assert len(payload["blocks"]) >= 4
 
 
 def test_leaderboard_emit_helper(tmp_path):
     text = emit_leaderboard(ROOT, fmt="text")
     assert "lidar_localization_replay_001" in text
     assert "ndt_baseline" in text
+    # New text format groups by benchmark header.
+    assert "===" in text
 
 
 def test_failure_card_schema_validates(tmp_path):

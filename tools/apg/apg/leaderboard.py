@@ -3,12 +3,22 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from .schema import (
     iter_benchmark_manifests,
     iter_experiment_manifests,
     load_document,
+)
+
+
+# Generic execution-side metrics that we surface regardless of benchmark
+# (so two rosbag_replay benchmarks can be compared at a glance even
+# when their gate metrics differ).
+GENERIC_METRIC_COLUMNS: tuple[str, ...] = (
+    "play_returncode",
+    "play_elapsed_sec",
+    "rosbag_message_count",
 )
 
 
@@ -39,20 +49,54 @@ class LeaderboardEntry:
 
 
 @dataclass
-class Leaderboard:
-    columns: list[str]
+class LeaderboardBlock:
+    benchmark: str
+    task: str
+    runner: str | None
+    columns: list[str]  # gate metrics for this benchmark only
     entries: list[LeaderboardEntry] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "benchmark": self.benchmark,
+            "task": self.task,
+            "runner": self.runner,
             "columns": self.columns,
             "entries": [entry.to_dict() for entry in self.entries],
         }
 
 
-def _collect_metric_columns(
-    benchmark_doc: dict[str, Any], entries: Iterable[LeaderboardEntry]
-) -> list[str]:
+@dataclass
+class Leaderboard:
+    blocks: list[LeaderboardBlock] = field(default_factory=list)
+
+    @property
+    def entries(self) -> list[LeaderboardEntry]:
+        out: list[LeaderboardEntry] = []
+        for block in self.blocks:
+            out.extend(block.entries)
+        return out
+
+    @property
+    def columns(self) -> list[str]:
+        seen: set[str] = set()
+        out: list[str] = []
+        for block in self.blocks:
+            for col in block.columns:
+                if col not in seen:
+                    out.append(col)
+                    seen.add(col)
+        return out
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "blocks": [block.to_dict() for block in self.blocks],
+            "columns": self.columns,
+            "entries": [entry.to_dict() for entry in self.entries],
+        }
+
+
+def _gate_columns(benchmark_doc: dict[str, Any]) -> list[str]:
     columns: list[str] = []
     seen: set[str] = set()
     gates = benchmark_doc.get("gates", {}) or {}
@@ -62,16 +106,22 @@ def _collect_metric_columns(
             if name and name not in seen:
                 columns.append(name)
                 seen.add(name)
-    for entry in entries:
-        for name in entry.metrics:
-            if name not in seen and not name.startswith("dry_run"):
-                columns.append(name)
-                seen.add(name)
     return columns
+
+
+def _block_columns(benchmark_doc: dict[str, Any]) -> list[str]:
+    cols = _gate_columns(benchmark_doc)
+    seen = set(cols)
+    for name in GENERIC_METRIC_COLUMNS:
+        if name not in seen:
+            cols.append(name)
+            seen.add(name)
+    return cols
 
 
 def _select_best_record(
     benchmark_dir: Path,
+    benchmark_name: str,
     experiment_name: str,
     runs_root: Path | None,
 ) -> tuple[Path | None, str]:
@@ -80,10 +130,10 @@ def _select_best_record(
     Preference order:
       1. baseline matching the experiment name (most specific)
       2. most recent runs/<id>/result.json whose benchmark + experiment match
-      3. None — show the row as "missing" (dry-run not used as leaderboard data)
+         and that is a non-dry-run record
+      3. None — show the row as "missing"
     """
-    baseline_dir = benchmark_dir / "baselines" / experiment_name
-    baseline_result = baseline_dir / "result.json"
+    baseline_result = benchmark_dir / "baselines" / experiment_name / "result.json"
     if baseline_result.is_file():
         return baseline_result, "baseline"
 
@@ -96,7 +146,7 @@ def _select_best_record(
                 continue
             if doc.get("experiment") != experiment_name:
                 continue
-            if doc.get("benchmark") != _benchmark_name(benchmark_dir):
+            if doc.get("benchmark") != benchmark_name:
                 continue
             if doc.get("execution", {}).get("dry_run"):
                 continue
@@ -105,11 +155,6 @@ def _select_best_record(
             return candidates[-1], "runs"
 
     return None, "missing"
-
-
-def _benchmark_name(benchmark_dir: Path) -> str:
-    manifest = load_document(benchmark_dir / "benchmark.yaml")
-    return manifest.get("name", benchmark_dir.name)
 
 
 def _experiment_refs(experiment_doc: dict[str, Any]) -> set[str]:
@@ -134,9 +179,7 @@ def build_leaderboard(root: Path) -> Leaderboard:
         doc.setdefault("_path", rel)
         experiment_index[rel] = doc
 
-    all_entries: list[LeaderboardEntry] = []
-    all_columns: list[str] = []
-    seen_columns: set[str] = set()
+    blocks: list[LeaderboardBlock] = []
 
     for manifest_path in benchmark_manifests:
         benchmark_dir = manifest_path.parent
@@ -144,19 +187,23 @@ def build_leaderboard(root: Path) -> Leaderboard:
         benchmark_name = benchmark_doc.get("name", benchmark_dir.name)
         benchmark_rel = benchmark_dir.relative_to(root).as_posix()
         task = benchmark_doc.get("task", "unknown")
+        runner = (benchmark_doc.get("runner") or {}).get("type")
 
         candidate_experiments: list[str] = []
         for exp_rel, exp_doc in experiment_index.items():
             if exp_doc.get("task") != task:
                 continue
-            if benchmark_rel in _experiment_refs(exp_doc) or not _experiment_refs(exp_doc):
+            refs = _experiment_refs(exp_doc)
+            if benchmark_rel in refs or not refs:
                 candidate_experiments.append(exp_rel)
 
         bench_entries: list[LeaderboardEntry] = []
         for exp_rel in sorted(candidate_experiments):
             exp_doc = experiment_index[exp_rel]
             exp_name = exp_doc.get("name", Path(exp_rel).name)
-            record_path, source = _select_best_record(benchmark_dir, exp_name, runs_root)
+            record_path, source = _select_best_record(
+                benchmark_dir, benchmark_name, exp_name, runs_root
+            )
             entry = LeaderboardEntry(
                 benchmark=benchmark_name,
                 experiment=exp_name,
@@ -178,13 +225,17 @@ def build_leaderboard(root: Path) -> Leaderboard:
                 entry.metrics = dict(record.get("metrics") or {})
             bench_entries.append(entry)
 
-        for column in _collect_metric_columns(benchmark_doc, bench_entries):
-            if column not in seen_columns:
-                all_columns.append(column)
-                seen_columns.add(column)
-        all_entries.extend(bench_entries)
+        blocks.append(
+            LeaderboardBlock(
+                benchmark=benchmark_name,
+                task=task,
+                runner=runner,
+                columns=_block_columns(benchmark_doc),
+                entries=bench_entries,
+            )
+        )
 
-    return Leaderboard(columns=all_columns, entries=all_entries)
+    return Leaderboard(blocks=blocks)
 
 
 def _format_value(value: Any) -> str:
@@ -197,48 +248,58 @@ def _format_value(value: Any) -> str:
     return str(value)
 
 
-def format_leaderboard_markdown(board: Leaderboard) -> str:
-    if not board.entries:
-        return "no benchmarks found.\n"
-    header_cols = [
-        "benchmark",
-        "experiment",
-        "source",
-        "baseline_status",
-        "status",
-    ] + board.columns + ["failures"]
-    rows = ["| " + " | ".join(header_cols) + " |"]
-    rows.append("|" + "|".join(["---"] * len(header_cols)) + "|")
-    for entry in board.entries:
+def _format_block_markdown(block: LeaderboardBlock) -> str:
+    runner = f" — runner: `{block.runner}`" if block.runner else ""
+    lines = [f"## {block.benchmark} ({block.task}){runner}", ""]
+    if not block.entries:
+        lines.append("_no experiments registered for this benchmark._")
+        lines.append("")
+        return "\n".join(lines)
+    header = ["experiment", "source", "baseline_status", "status", *block.columns, "failures"]
+    lines.append("| " + " | ".join(header) + " |")
+    lines.append("|" + "|".join(["---"] * len(header)) + "|")
+    for entry in block.entries:
         cells = [
-            entry.benchmark,
             entry.experiment,
             entry.source,
             entry.baseline_status or "—",
             entry.status or "—",
         ]
-        for col in board.columns:
+        for col in block.columns:
             cells.append(_format_value(entry.metrics.get(col)))
         cells.append(",".join(entry.failures) if entry.failures else "—")
-        rows.append("| " + " | ".join(str(c) for c in cells) + " |")
-    return "\n".join(rows) + "\n"
+        lines.append("| " + " | ".join(str(c) for c in cells) + " |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def format_leaderboard_markdown(board: Leaderboard) -> str:
+    if not board.blocks:
+        return "no benchmarks found.\n"
+    return "\n".join(_format_block_markdown(block) for block in board.blocks)
 
 
 def format_leaderboard_text(board: Leaderboard) -> str:
-    if not board.entries:
+    if not board.blocks:
         return "no benchmarks found.\n"
     lines: list[str] = []
-    for entry in board.entries:
-        prefix = f"{entry.benchmark} :: {entry.experiment} ({entry.source})"
-        status = f"baseline_status={entry.baseline_status or '—'} status={entry.status or '—'}"
-        lines.append(f"{prefix} — {status}")
-        for col in board.columns:
-            value = entry.metrics.get(col)
-            if value is not None:
-                lines.append(f"  {col}: {_format_value(value)}")
-        if entry.failures:
-            lines.append(f"  failures: {', '.join(entry.failures)}")
-    return "\n".join(lines) + "\n"
+    for block in board.blocks:
+        runner = f" [runner: {block.runner}]" if block.runner else ""
+        lines.append(f"=== {block.benchmark} ({block.task}){runner} ===")
+        if not block.entries:
+            lines.append("  (no experiments registered)")
+        for entry in block.entries:
+            head = f"  {entry.experiment} ({entry.source}) — "
+            head += f"baseline_status={entry.baseline_status or '—'} status={entry.status or '—'}"
+            lines.append(head)
+            for col in block.columns:
+                value = entry.metrics.get(col)
+                if value is not None:
+                    lines.append(f"    {col}: {_format_value(value)}")
+            if entry.failures:
+                lines.append(f"    failures: {', '.join(entry.failures)}")
+        lines.append("")
+    return "\n".join(lines)
 
 
 def emit_leaderboard(root: Path, *, fmt: str) -> str:

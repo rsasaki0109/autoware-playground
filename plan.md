@@ -1349,7 +1349,7 @@ This order keeps the repository benchmark-first from the beginning.
 
 ## 26. Current Local State After MVP Dry-Run Pass
 
-Updated on 2026-05-23 after the thirteenth MVP implementation pass (leaderboard now lives in the repo: the CI `leaderboard` job auto-commits the generated markdown back to `reports/leaderboard.md` on every push to `main`, with `[skip ci]` to avoid loops. The README links to it directly).
+Updated on 2026-05-23 after the fourteenth MVP implementation pass (leaderboard rendering rewritten as one block per benchmark: each block has its own short metric column list scoped to that benchmark's gates + a handful of generic execution metrics, so planning columns no longer leak into localization rows. `apg leaderboard --format markdown` now emits `## benchmark (task) — runner` headers; JSON output exposes `blocks` alongside the flat `entries` / `columns` for compatibility).
 
 The remaining stretch goal toward a leaderboard:
 
@@ -1673,6 +1673,16 @@ Resume from here:
       auto-commit does not retrigger smoke. README links to
       `reports/leaderboard.md` so the leaderboard is now the first
       thing a visitor can click through to.
+    - fourteenth pass: leaderboard rendering rewritten as one block
+      per benchmark. Each block has its own column list scoped to
+      that benchmark's gates plus `play_returncode`, `play_elapsed_sec`,
+      `rosbag_message_count` as generic execution columns. Markdown
+      output starts each block with
+      `## benchmark_name (task) — runner: \`runner_type\``. JSON
+      output now exposes `blocks: [...]` alongside the flat
+      `entries` / `columns` arrays for back-compat. This kills the
+      27-wide horizontal table that used to leak planning columns
+      into localization rows.
 
 ## 28. Implementation Notes For Next Session
 
